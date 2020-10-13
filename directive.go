@@ -23,31 +23,24 @@ type Directive struct {
 
 	String string
 	Text   []string
-	List   []Directive
-	Map    map[string]Directive
+	List   []*Directive
+	Map    map[string]*Directive
 }
 
 func (d *Directive) Parse(content []byte) (*Directive, error) {
 	d.Type = DirectiveTypeUnknown
 
 	buffer := bytes.NewBuffer(content)
-	line, err := buffer.ReadBytes(byte('\n'))
 
-	eof := (err == io.EOF)
-	if !eof && err != nil {
-		log.Fatal(fmt.Sprintf("nestedtext encountered unknown buffer.ReadString error %s", err.Error()))
-		return nil, err
-	}
-
-	// initial line
-	firstMeaningfulChar, index := d.readFirstMeaningfulCharacter(line)
-	if firstMeaningfulChar != 0x00 {
-		d.SetString(string(line[index:]))
-		return d, nil
-	}
+	var line []byte
+	var err error
+	forwardRetrieval := false
 
 	for {
-		line, err = buffer.ReadBytes(byte('\n'))
+		if !forwardRetrieval {
+			line, err = buffer.ReadBytes(byte('\n'))
+		}
+		forwardRetrieval = false
 
 		eof := (err == io.EOF)
 		if !eof && err != nil {
@@ -55,19 +48,78 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 			break
 		}
 
-		firstMeaningfulChar, index = d.readFirstMeaningfulCharacter(line)
+		firstMeaningfulChar, index := d.readFirstMeaningfulCharacter(line)
 
 		switch firstMeaningfulChar {
-			case 0x00: // empty line
-			case '#': // comment
-			case '>': { // multi line text
+		case 0x00: // empty line
+		case '#': // comment
+		case '>':
+			{ // multi line text
 				d.Type = DirectiveTypeText
-				firstMeaningfulChar, index = d.readFirstMeaningfulCharacter(line[index:])
-				d.Text = append(d.Text, string(line[index:]))
+				contentPart := line[index+1:]
+				_, contentIndex := d.readFirstMeaningfulCharacter(contentPart)
+				d.Text = append(d.Text, string(contentPart[contentIndex:]))
 			}
-			case '-': // list
+		case '-':
+			{ // list
+				d.Type = DirectiveTypeList
+				elementContent := line[index+1:]
 
+				for {
+					line, err = buffer.ReadBytes(byte('\n'))
+
+					eof := (err == io.EOF)
+					if !eof && err != nil {
+						log.Fatal(fmt.Sprintf("nestedtext encountered unknown buffer.ReadString error %s", err.Error()))
+						break
+					}
+
+					char, nextIndex := d.readFirstMeaningfulCharacter(line)
+
+					if nextIndex == index {
+						if char != '-' {
+							// TODO: irregular case
+						}
+						// it is next element
+						forwardRetrieval = true
+						break
+					}
+
+					elementContent = append(elementContent, line[nextIndex+1:]...)
+
+					if eof {
+						break
+					}
+				}
+
+				child := &Directive{}
+
+				_, err = child.Parse(elementContent)
+				if err == nil {
+					d.List = append(d.List, child)
+				} else {
+					log.Fatal(fmt.Sprintf("nestedtext encountered unknown default.Parse error %s", err.Error()))
+				}
 			}
+		default:
+			{
+				sepIndex := d.getCharacterIndex(line[index:], ':')
+				if sepIndex == -1 {
+					// string
+					d.Type = DirectiveTypeString
+					// remove trailing line break
+					if line[len(line)-1] == '\n' {
+						d.String = string(line[index : len(line)-1])
+					} else {
+						d.String = string(line[index:])
+					}
+
+				}
+			}
+		}
+
+		if eof {
+			break
 		}
 	}
 
@@ -75,12 +127,12 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 }
 
 func (d *Directive) SetString(data string) {
-	d.Type   = DirectiveTypeString
+	d.Type = DirectiveTypeString
 	d.String = data
 }
 
 func (d *Directive) readFirstMeaningfulCharacter(line []byte) (byte, int) {
-	var char  byte
+	var char byte
 	var index int
 
 	for len(line) > index {
@@ -94,4 +146,21 @@ func (d *Directive) readFirstMeaningfulCharacter(line []byte) (byte, int) {
 	}
 
 	return 0x00, -1
+}
+
+func (d *Directive) getCharacterIndex(line []byte, character byte) int {
+	var index int
+	var char byte
+
+	for len(line) > index {
+		char = line[index]
+
+		if character == char {
+			return index
+		}
+
+		index++
+	}
+
+	return -1
 }
