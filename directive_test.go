@@ -222,9 +222,12 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("list", func(t *testing.T) {
-		t.Run("string elements string", func(t *testing.T) {
+		t.Run("string elements", func(t *testing.T) {
 			expect := []string{"string", "elements"}
-			data = []byte(fmt.Sprintf("- %s\n- %s", expect[0], expect[1]))
+			data = []byte(fmt.Sprintf(
+`- %s
+- %s`,
+				expect[0], expect[1]))
 
 			t.Run("Type should be DirectiveTypeList", func(t *testing.T) {
 				directive, err := subject()
@@ -232,7 +235,7 @@ func TestParse(t *testing.T) {
 				assert.Nil(t, err)
 				assert.Equal(t, DirectiveTypeList, directive.Type)
 			})
-			t.Run("List should directives with DirectiveTypeString", func(t *testing.T) {
+			t.Run("List should contain directives with DirectiveTypeString", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
@@ -242,6 +245,88 @@ func TestParse(t *testing.T) {
 					element := directive.List[i]
 					assert.Equal(t, DirectiveTypeString, element.Type)
 					assert.Equal(t, expect[i], element.String)
+				}
+			})
+		})
+
+		t.Run("text elements", func(t *testing.T) {
+			expect := [][]string{
+				[]string { "aaaa", "bbbb" },
+				[]string { "cccc", "dddd" },
+			}
+			data = []byte(fmt.Sprintf(
+`-
+  > %s
+  > %s
+-
+  > %s
+  > %s`,
+				expect[0][0], expect[0][1],
+				expect[1][0], expect[1][1],
+			))
+
+			t.Run("Type should be DirectiveTypeList", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+			})
+			t.Run("List should contain directives with DirectiveTypeText", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, len(expect), len(directive.List))
+
+				for i := 0; i < len(directive.List); i++ {
+					element := directive.List[i]
+					assert.Equal(t, DirectiveTypeText, element.Type)
+					for j := 0; j < len(element.Text); j++ {
+						e := expect[i][j]
+						if j != len(element.Text) - 1 {
+							e = fmt.Sprintf("%s\n", e)
+						}
+						assert.Equal(t, e, element.Text[j])
+					}
+				}
+			})
+		})
+
+		t.Run("list elements", func(t *testing.T) {
+			expect := [][]string{
+				[]string { "aaaa", "bbbb" },
+				[]string { "cccc", "dddd" },
+			}
+			data = []byte(fmt.Sprintf(
+`-
+  - %s
+  - %s
+-
+  - %s
+  - %s`,
+				expect[0][0], expect[0][1],
+				expect[1][0], expect[1][1],
+			))
+
+			t.Run("Type should be DirectiveTypeList", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+			})
+			t.Run("List should contain directives with DirectiveTypeList", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, len(expect), len(directive.List))
+
+				for i := 0; i < len(directive.List); i++ {
+					element := directive.List[i]
+					assert.Equal(t, DirectiveTypeList, element.Type)
+					for j := 0; j < len(element.List); j++ {
+						nestedElement := element.List[j]
+						assert.Equal(t, DirectiveTypeString, nestedElement.Type)
+						assert.Equal(t, expect[i][j], nestedElement.String)
+					}
 				}
 			})
 		})

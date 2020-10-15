@@ -30,6 +30,11 @@ type Directive struct {
 func (d *Directive) Parse(content []byte) (*Directive, error) {
 	d.Type = DirectiveTypeUnknown
 
+	// remove trailing line breaks
+	for len(content) > 0 && content[len(content) - 1] == '\n' {
+		content = content[:len(content) - 1]
+	}
+
 	buffer := bytes.NewBuffer(content)
 
 	var line []byte
@@ -85,7 +90,11 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 						break
 					}
 
-					elementContent = append(elementContent, line[nextIndex+1:]...)
+					if nextIndex == -1 {
+						elementContent = append(elementContent, line[0:]...)
+					} else {
+						elementContent = append(elementContent, line[nextIndex:]...)
+					}
 
 					if eof {
 						break
