@@ -25,6 +25,61 @@ type Directive struct {
 	Text   []string
 	List   []*Directive
 	Map    map[string]*Directive
+
+	IndentSize int
+	Depth      int
+}
+
+func (d *Directive) ToString() string {
+	str := ""
+
+	baseIndent := fmt.Sprintf("%*s", d.IndentSize * d.Depth, "")
+	switch d.Type {
+	case DirectiveTypeString: {
+		str = d.String
+	}
+	case DirectiveTypeText: {
+		for i := 0; i < len(d.Text); i++ {
+			str = fmt.Sprintf("%s%s> %s", str, baseIndent, d.Text[i])
+		}
+	}
+	case DirectiveTypeList: {
+		for i := 0; i < len(d.List); i++ {
+			dataLn := "\n"
+			tailLn := "\n"
+			if i == len(d.List) - 1 {
+				tailLn = ""
+			}
+
+			child := d.List[i]
+			if child.Type == DirectiveTypeString {
+				dataLn = ""
+			}
+
+			str = fmt.Sprintf("%s%s- %s%s%s", str, baseIndent, dataLn, child.ToString(), tailLn)
+		}
+	}
+	case DirectiveTypeMap: {
+		it := 0
+		for k, v := range d.Map {
+			dataLn := "\n"
+			tailLn := "\n"
+			if it == len(d.Map) - 1 {
+				tailLn = ""
+			}
+
+			if v.Type == DirectiveTypeString {
+				dataLn = ""
+			}
+
+			str = fmt.Sprintf("%s%s%s: %s%s%s", str, baseIndent, k, dataLn, v.ToString(), tailLn)
+
+			it++
+		}
+	}
+	}
+
+	return str
 }
 
 func (d *Directive) Parse(content []byte) (*Directive, error) {
@@ -70,6 +125,7 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 				d.Type = DirectiveTypeList
 				elementContent := line[index+1:]
 
+				// TODO: slmost same as map
 				for {
 					line, err = buffer.ReadBytes(byte('\n'))
 
@@ -101,7 +157,10 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 					}
 				}
 
-				child := &Directive{}
+				child := &Directive{
+					IndentSize: d.IndentSize,
+					Depth: d.Depth + 1,
+				}
 
 				_, err = child.Parse(elementContent)
 				if err == nil {
@@ -122,8 +181,59 @@ func (d *Directive) Parse(content []byte) (*Directive, error) {
 					} else {
 						d.String = string(line[index:])
 					}
-
+					break
 				}
+
+				d.Type = DirectiveTypeMap
+				key := line[index:sepIndex]
+				elementContent := line[sepIndex+1:]
+
+				for {
+					line, err = buffer.ReadBytes(byte('\n'))
+
+					eof := (err == io.EOF)
+					if !eof && err != nil {
+						log.Fatal(fmt.Sprintf("nestedtext encountered unknown buffer.ReadString error %s", err.Error()))
+						break
+					}
+
+					char, nextIndex := d.readFirstMeaningfulCharacter(line)
+
+					if nextIndex == index {
+						if char == '-' || char == '>' {
+							// TODO: irregular case
+						}
+						// it is next element
+						forwardRetrieval = true
+						break
+					}
+
+					if nextIndex == -1 {
+						elementContent = append(elementContent, line[0:]...)
+					} else {
+						elementContent = append(elementContent, line[nextIndex:]...)
+					}
+
+					if eof {
+						break
+					}
+				}
+
+				child := &Directive{
+					IndentSize: d.IndentSize,
+					Depth: d.Depth + 1,
+				}
+
+				_, err = child.Parse(elementContent)
+				if err == nil {
+					if d.Map == nil {
+						d.Map = make(map[string]*Directive)
+					}
+					d.Map[string(key)] = child
+				} else {
+					log.Fatal(fmt.Sprintf("nestedtext encountered unknown default.Parse error %s", err.Error()))
+				}
+
 			}
 		}
 
