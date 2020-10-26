@@ -838,7 +838,9 @@ func TestDictionary(t *testing.T) {
 		// json number for key is not allowed
 		// TODO: json conversion
 	})
+}
 
+func TestEmpty(t *testing.T) {	
 	t.Run("empty_1", func(t *testing.T) {
 		// empty content should be null
 		dat, _ := ioutil.ReadFile("./test/cases/empty_1/load_in.nt")
@@ -856,5 +858,73 @@ func TestDictionary(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Equal(t, EmptyDataError, err.error)
 	})
+}
 
+func TestHolistic(t *testing.T) {	
+	t.Run("holistic_1", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_1/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_2", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_2/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_3", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_3/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_4", func(t *testing.T) {
+		// empty content should be null
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_4/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_5", func(t *testing.T) {
+		// empty content should be null
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_5/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_6", func(t *testing.T) {
+		// empty content should be null
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_6/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
+
+	t.Run("holistic_7", func(t *testing.T) {
+		// empty content should be null
+		dat, _ := ioutil.ReadFile("./test/cases/holistic_7/load_in.nt")
+
+		directive := &Directive{}
+		err := directive.Marshal(dat)
+
+		assert.Nil(t, err)
+	})
 }
