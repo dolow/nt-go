@@ -7,19 +7,91 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParse(t *testing.T) {
+func TestMarshal(t *testing.T) {
 
 	var data []byte
 
-	subject := func() (*Directive, error) {
+	subject := func() (*Directive, *DirectiveMarshalError) {
 		directive := &Directive{}
-		return directive.Parse(data)
+		err := directive.Marshal(data)
+		return directive, err
 	}
 
 	t.Run("string", func(t *testing.T) {
 
 		expect := "plain text"
+		t.Run("regular string", func(t *testing.T) {
+			data = []byte(expect)
 
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string start with space", func(t *testing.T) {
+			data = []byte(fmt.Sprintf("  %s", expect))
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string start with line break", func(t *testing.T) {
+			data = []byte(fmt.Sprintf("\n%s", expect))
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string start with line break with forward spaces", func(t *testing.T) {
+			data = []byte(fmt.Sprintf("  \n%s", expect))
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string start with line break and second line starts with spaces", func(t *testing.T) {
+			data = []byte(fmt.Sprintf("\n  %s", expect))
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string with comment symbol (#)", func(t *testing.T) {
+			expect = "plain text # it is not comment"
+			data = []byte(expect)
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+
+		t.Run("string ending with line break", func(t *testing.T) {
+			expect = "plain text"
+			data = []byte(fmt.Sprintf("%s\n", expect))
+
+			t.Run("should cause RootStringError", func(t *testing.T) {
+				_, err := subject()
+				assert.NotNil(t, err)
+				assert.Equal(t, RootStringError, err.error)
+			})
+		})
+/*
 		t.Run("regular string", func(t *testing.T) {
 			data = []byte(expect)
 
@@ -140,6 +212,7 @@ func TestParse(t *testing.T) {
 				assert.Equal(t, directive.String, expect)
 			})
 		})
+		*/
 	})
 
 	t.Run("text", func(t *testing.T) {
@@ -429,7 +502,7 @@ func TestParse(t *testing.T) {
 			})
 		})
 
-		t.Run("map string elements", func(t *testing.T) {
+		t.Run("dictionary string elements", func(t *testing.T) {
 			expect := [][][]string{
 				[][]string {
 					{ "key1", "val1" },
@@ -459,7 +532,7 @@ func TestParse(t *testing.T) {
 				assert.Nil(t, err)
 				assert.Equal(t, DirectiveTypeList, directive.Type)
 			})
-			t.Run("List should contain directives with DirectiveTypeMap", func(t *testing.T) {
+			t.Run("List should contain directives with DirectiveTypeDictionary", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
@@ -468,14 +541,14 @@ func TestParse(t *testing.T) {
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
 
-					assert.Equal(t, DirectiveTypeMap, element.Type)
-					assert.Equal(t, expect[i][0][1], element.Map[expect[i][0][0]].String)
-					assert.Equal(t, expect[i][1][1], element.Map[expect[i][1][0]].String)
+					assert.Equal(t, DirectiveTypeDictionary, element.Type)
+					assert.Equal(t, expect[i][0][1], element.Dictionary[expect[i][0][0]].String)
+					assert.Equal(t, expect[i][1][1], element.Dictionary[expect[i][1][0]].String)
 				}
 			})
 		})
 
-		t.Run("map string elements with unbalanced spaces", func(t *testing.T) {
+		t.Run("dictionary string elements with unbalanced spaces", func(t *testing.T) {
 			expect := [][][]string{
 				[][]string {
 					{ "key1", "val1" },
@@ -505,7 +578,7 @@ func TestParse(t *testing.T) {
 				assert.Nil(t, err)
 				assert.Equal(t, DirectiveTypeList, directive.Type)
 			})
-			t.Run("Map elements should be in the same depth", func(t *testing.T) {
+			t.Run("Dictionary elements should be in the same depth", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
@@ -513,11 +586,11 @@ func TestParse(t *testing.T) {
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
 
-					assert.Equal(t, element.Depth + 1, element.Map[expect[i][0][0]].Depth)
+					assert.Equal(t, element.Depth + 1, element.Dictionary[expect[i][0][0]].Depth)
 				}
 			})
 
-			t.Run("Map elements value string should be trimmed", func(t *testing.T) {
+			t.Run("Dictionary elements value string should be trimmed", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
@@ -525,15 +598,15 @@ func TestParse(t *testing.T) {
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
 
-					assert.Equal(t, expect[i][0][1], element.Map[expect[i][0][0]].String)
-					assert.Equal(t, expect[i][1][1], element.Map[expect[i][1][0]].String)
+					assert.Equal(t, expect[i][0][1], element.Dictionary[expect[i][0][0]].String)
+					assert.Equal(t, expect[i][1][1], element.Dictionary[expect[i][1][0]].String)
 				}
 			})
 		})
 	})
 
 
-	t.Run("map", func(t *testing.T) {
+	t.Run("dictionary", func(t *testing.T) {
 		t.Run("string elements", func(t *testing.T) {
 			expectKey   := []string{"key1",   "key2"}
 			expectValue := []string{"value1", "value2"}
@@ -545,27 +618,27 @@ func TestParse(t *testing.T) {
 				expectKey[1], expectValue[1],
 			))
 
-			t.Run("Type should be DirectiveTypeMap", func(t *testing.T) {
+			t.Run("Type should be DirectiveTypeDictionary", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
-				assert.Equal(t, DirectiveTypeMap, directive.Type)
+				assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 			})
-			t.Run("Map should contain directives with DirectiveTypeString and certain keys", func(t *testing.T) {
+			t.Run("Dictionary should contain directives with DirectiveTypeString and certain keys", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
-				assert.Equal(t, len(expectKey), len(directive.Map))
+				assert.Equal(t, len(expectKey), len(directive.Dictionary))
 
-				assert.Equal(t, expectValue[0], directive.Map[expectKey[0]].String)
-				assert.Equal(t, expectValue[1], directive.Map[expectKey[1]].String)
+				assert.Equal(t, expectValue[0], directive.Dictionary[expectKey[0]].String)
+				assert.Equal(t, expectValue[1], directive.Dictionary[expectKey[1]].String)
 			})
 		})
 	})
 }
 
 
-func TestToString(t *testing.T) {
+func TestUnmarshal(t *testing.T) {
 
 	var data []byte
 	var indentSize int
@@ -583,10 +656,10 @@ func TestToString(t *testing.T) {
 			IndentSize: indentSize,
 			Depth: depth,
 		}
-		directive.Parse(data)
-		return directive.ToString()
+		directive.Marshal(data)
+		return directive.Unmarshal()
 	}
-
+/*
 	t.Run("string", func(t *testing.T) {
 		data = []byte("stringvalue")
 
@@ -614,6 +687,7 @@ func TestToString(t *testing.T) {
 			})
 		})
 	})
+	*/
 
 	t.Run("text", func(t *testing.T) {
 		line1 := []byte("> aaaa\n")
@@ -683,7 +757,7 @@ func TestToString(t *testing.T) {
 		})
 	})
 
-	t.Run("map", func(t *testing.T) {
+	t.Run("dictionary", func(t *testing.T) {
 		line1 := []byte("key1: value1")
 		line2 := []byte("key2: value2")
 		data = []byte(fmt.Sprintf("%s\n%s", string(line1), string(line2)))
@@ -697,8 +771,9 @@ func TestToString(t *testing.T) {
 			expect2 := func() string { return fmt.Sprintf("%s\n%s", string(line2), string(line1)) }
 
 			t.Run("should return text with no indentation", func(t *testing.T) {
-				// map is unordered
-				assert.True(t, expect1() == subject() || expect2() == subject())
+				// dictionary is unordered
+				result := subject()
+				assert.True(t, expect1() == result || expect2() == result)
 			})
 		})
 
@@ -719,9 +794,53 @@ func TestToString(t *testing.T) {
 			}
 
 			t.Run("should return text with indentation", func(t *testing.T) {
-				// map is unordered
-				assert.True(t, expect1() == subject() || expect2() == subject())
+				// dictionary is unordered
+				result := subject()
+				assert.True(t, expect1() == result || expect2() == result)
 			})	
 		})
 	})
+}
+
+func TestDetectKeyBytes(t *testing.T) {
+
+	cases := [][]string{
+		[]string{`-#:'>: -#:">:`, `-#:'>`},
+		[]string{`-#:">: -#:'>:`, `-#:">`},
+		[]string{`-#'\'>:: -#"\">::`, `-#'\'>:`},
+		[]string{`-#"\">:: -#'\'>::`, `-#"\">:`},
+		[]string{`:-#:'>: :-#:">:`, `:-#:'>`},
+		[]string{`:-#:">: :-#:'>:`, `:-#:">`},
+		[]string{`:-#'\'>:: :-#"\">::`, `:-#'\'>:`},
+		[]string{`:-#"\">:: :-#'\'>::`, `:-#"\">:`},
+		[]string{`>:-#:'>: >:-#:">:`, `>:-#:'>`},
+		[]string{`>:-#:">: >:-#:'>:`, `>:-#:">`},
+		[]string{`>:-#'\'>:: >:-#"\">::`, `>:-#'\'>:`},
+		[]string{`>:-#"\">:: >:-#'\'>::`, `>:-#"\">:`},
+		[]string{`:`, ``},
+		[]string{`~!@#$%^&*()_+-1234567890{}[]|\;<>?,./: ~!@#$%^&*()_+-1234567890{}[]|\:;<>?,./`, `~!@#$%^&*()_+-1234567890{}[]|\;<>?,./`},
+		[]string{`'- key 3': - value 3`, `'- key 3'`}, // not sanitize
+		[]string{`'key 4: ': value 4:`, `'key 4: '`}, // not sanitize
+		[]string{`'> key 5': > value 5`, `'> key 5'`}, // not sanitize
+		[]string{`'# key 6': #value 6`, `'# key 6'`}, // not sanitize
+		[]string{`': key 7': : value 7`, `': key 7'`}, // not sanitize
+		[]string{`'" key 8 "': " value 8 "`, `'" key 8 "'`}, // not sanitize
+		[]string{`"' key 9 '": ' value 9 '`, `"' key 9 '"`}, // not sanitize
+		[]string{`key 10: value '" 10`, `key 10`},
+		[]string{`key 11: And Fred said 'yabba dabba doo!' to Barney.`, `key 11`},
+		[]string{`key " 12: value ' 12`, `key " 12`},
+		[]string{`$€¥£₩₺₽₹ɃΞȄ: $€¥£₩₺₽₹ɃΞȄ`, `$€¥£₩₺₽₹ɃΞȄ`},
+		[]string{`YZEPTGMKk_cmuµμnpfazy: YZEPTGMKk_cmuµμnpfazy`, `YZEPTGMKk_cmuµμnpfazy`},
+		[]string{`a-zA-Z%√{us}{cur}][-^/()\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧: a-zA-Z%√{us}{cur}][-^/()\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧`, `a-zA-Z%√{us}{cur}][-^/()\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧`},
+	}
+
+	for _, item := range cases {
+		it := item[0]
+		expect := []byte(item[1])
+
+		t.Run(fmt.Sprintf(`key of %s should be %s`, it, expect), func(t *testing.T) {
+			key, _ := detectKeyBytes([]byte(it))
+			assert.Equal(t, expect, key)
+		})
+	}
 }
