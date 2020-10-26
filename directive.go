@@ -182,6 +182,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 		case DirectiveTypeUnknown:
 		case DirectiveTypeText:  // multi line text
 			{
+				/*
 				if d.Type == DirectiveTypeText {
 					if index != lastIndex {
 						marshalErr = &DirectiveMarshalError{
@@ -212,6 +213,79 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 				} else {
 					// TODO: trailing comment or blank line
 					d.Text = append(d.Text, string(contentPart[contentIndex:]))
+				}
+				*/
+
+				if d.Type == DirectiveTypeText {
+					if index != lastIndex {
+						marshalErr = &DirectiveMarshalError{
+							error: DifferentLevelOnSameChildError,
+						}
+						break ReadLineLoop
+					}
+				} else if d.Type != DirectiveTypeUnknown {
+					marshalErr = &DirectiveMarshalError{
+						error: DifferentTypesOnTheSameLevelError,
+					}
+					break ReadLineLoop
+				}
+
+				d.Type = DirectiveTypeText
+
+				TextChildReadLineLoop: for {
+					char, newIndex := readFirstMeaningfulCharacter(line, false)
+					trailingBlankLine := false
+
+					if char != CommentSymbol && newIndex != NotFoundIndex {
+						if newIndex > index {
+							// deeper
+							marshalErr = &DirectiveMarshalError{
+								error: DifferentLevelOnSameChildError,
+							}
+							break TextChildReadLineLoop
+						} else if newIndex < index {
+							// shallower
+							readBytesErr = NextDirectiveAppearedError
+							break TextChildReadLineLoop
+						}
+
+						if char != TextSymbol {
+							marshalErr = &DirectiveMarshalError{
+								error: DifferentLevelOnSameChildError,
+							}
+							break TextChildReadLineLoop
+						}
+
+						_, contentIndex := readFirstMeaningfulCharacter(line[newIndex + 1:], false)
+
+						if contentIndex == NotFoundIndex {
+							d.Text = append(d.Text, "")
+						} else {
+							d.Text = append(d.Text, string(line[newIndex + 1 + contentIndex:]))
+						}
+					} else {
+						trailingBlankLine = true
+					}
+
+					if readBytesErr != nil {
+						// if directive contains trailing blank line, last line of text directive may have trailing line break
+						if trailingBlankLine && len(d.Text) >= 1 {
+							lastLine := d.Text[len(d.Text) - 1]
+							if len(lastLine) >= 1 && lastLine[len(lastLine) - 1] == LineBreak {
+								d.Text[len(d.Text) - 1] = lastLine[:len(lastLine) - 1]
+							}
+						}
+
+						if readBytesErr == io.EOF {
+							break TextChildReadLineLoop
+						}
+						marshalErr = &DirectiveMarshalError{
+							error: readBytesErr,
+						}
+						break TextChildReadLineLoop
+					}
+
+					line, readBytesErr = buffer.ReadBytes(byte('\n'))
 				}
 			}
 		case DirectiveTypeList: // list

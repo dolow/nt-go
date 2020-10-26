@@ -217,7 +217,7 @@ func TestText(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.NotNil(t, err)
+		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 		t.Run("text_7_1", func(t *testing.T) {
@@ -347,8 +347,8 @@ func TestText(t *testing.T) {
 			
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
-			assert.Equal(t, "line 1\n", child.Text[0])
-			assert.Equal(t, "line 2", child.Text[1])
+			assert.Equal(t, "line 3\n", child.Text[0])
+			assert.Equal(t, "line 4", child.Text[1])
 		})
 		t.Run("text_7_15", func(t *testing.T) {
 			child := directive.Dictionary["trailing comment"]
@@ -468,18 +468,42 @@ func TestList(t *testing.T) {
 			}
 		}
 
-		assert.Equal(t, ":", directive.List[0].String)
-		assert.Equal(t, `~!@#$%^&*()_+-1234567890{}[]|\:;<>?,./`, directive.List[1].String)
-		assert.Equal(t, `- value 3`, directive.List[2].String)
-		assert.Equal(t, `' : value 4:'`, directive.List[3].String)
-		assert.Equal(t, `> value 5`, directive.List[4].String)
-		assert.Equal(t, `#value 6`, directive.List[5].String)
-		assert.Equal(t, `key 7' : : value 7`, directive.List[6].String)
-		assert.Equal(t, `" value 8 "`, directive.List[7].String)
-		assert.Equal(t, `' value 9 '`, directive.List[8].String)
-		assert.Equal(t, 1, len(directive.List[9].Text))
-		assert.Equal(t, `value '" 10`, directive.List[9].Text[0])
-		assert.Equal(t, `And Fred said 'yabba dabba doo!' to Barney.`, directive.List[10].String)
+		t.Run("list_7_1", func(t *testing.T) {
+			assert.Equal(t, ":", directive.List[0].String)
+		})
+		t.Run("list_7_2", func(t *testing.T) {
+			assert.Equal(t, `~!@#$%^&*()_+-1234567890{}[]|\:;<>?,./`, directive.List[1].String)
+		})
+		t.Run("list_7_3", func(t *testing.T) {
+			assert.Equal(t, `- value 3`, directive.List[2].String)
+		})
+		t.Run("list_7_4", func(t *testing.T) {
+			assert.Equal(t, `' : value 4:'`, directive.List[3].String)
+		})
+		t.Run("list_7_5", func(t *testing.T) {
+			assert.Equal(t, `> value 5`, directive.List[4].String)
+		})
+		t.Run("list_7_6", func(t *testing.T) {
+			assert.Equal(t, `#value 6`, directive.List[5].String)
+		})
+		t.Run("list_7_7", func(t *testing.T) {
+			assert.Equal(t, `key 7' : : value 7`, directive.List[6].String)
+		})
+		t.Run("list_7_8", func(t *testing.T) {
+			assert.Equal(t, `" value 8 "`, directive.List[7].String)
+		})
+		t.Run("list_7_9", func(t *testing.T) {
+			assert.Equal(t, `' value 9 '`, directive.List[8].String)
+		})
+		t.Run("list_7_10", func(t *testing.T) {
+			assert.Equal(t, 1, len(directive.List[9].Text))
+		})
+		t.Run("list_7_11", func(t *testing.T) {
+			assert.Equal(t, `value '" 10`, directive.List[9].Text[0])
+		})
+		t.Run("list_7_12", func(t *testing.T) {
+			assert.Equal(t, `And Fred said 'yabba dabba doo!' to Barney.`, directive.List[10].String)
+		})
 	})
 }
 
@@ -686,66 +710,95 @@ func TestDictionary(t *testing.T) {
 		var v *Directive
 		var ok bool
 
-		v, ok = directive.Dictionary[""]
+		t.Run("dict_17_1", func(t *testing.T) {
+			v, ok = directive.Dictionary[""]
+			assert.Equal(t, "", v.String)
+			assert.True(t, ok)
+		})
 
-		assert.Equal(t, "", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_2", func(t *testing.T) {
+			v, ok = directive.Dictionary["~!@#$%^&*()_+-1234567890{}[]|\\;<>?,./"]
+			assert.Equal(t, "~!@#$%^&*()_+-1234567890{}[]|\\:;<>?,./", v.String)
+			assert.True(t, ok)
+		})
 
-		v, ok = directive.Dictionary["~!@#$%^&*()_+-1234567890{}[]|\\;<>?,./"]
-		assert.Equal(t, "~!@#$%^&*()_+-1234567890{}[]|\\:;<>?,./", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_3", func(t *testing.T) {
+			v, ok = directive.Dictionary["- key 3"]
+			assert.Equal(t, "- value 3", v.String)
+			assert.True(t, ok)
+		})
 
-		v, ok = directive.Dictionary["- key 3"]
-		assert.Equal(t, "- value 3", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_4", func(t *testing.T) {
+			v, ok = directive.Dictionary["key 4: "]
+			assert.Equal(t, "value 4: ", v.String)
+			assert.True(t, ok)
+		})
 
-		v, ok = directive.Dictionary["key 4: "]
-		assert.Equal(t, "value 4: ", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_5", func(t *testing.T) {
+			v, ok = directive.Dictionary["> key 5"]
+			assert.Equal(t, "> value 5", v.String)
+			assert.True(t, ok)
+		})
+		
+		t.Run("dict_17_6", func(t *testing.T) {
+			v, ok = directive.Dictionary["# key 6"]
+			assert.Equal(t, "#value 6", v.String)
+			assert.True(t, ok)
+		})
+		
+		t.Run("dict_17_7", func(t *testing.T) {
+			v, ok = directive.Dictionary[": key 7"]
+			assert.Equal(t, ": value 7", v.String)
+			assert.True(t, ok)
+		})
 
-		v, ok = directive.Dictionary["> key 5"]
-		assert.Equal(t, "> value 5", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_8", func(t *testing.T) {
+			v, ok = directive.Dictionary["\" key 8 \""]
+			assert.Equal(t, "\" value 8 \"", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["# key 6"]
-		assert.Equal(t, "#value 6", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_9", func(t *testing.T) {
+			v, ok = directive.Dictionary["' key 9 '"]
+			assert.Equal(t, "' value 9 '", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary[": key 7"]
-		assert.Equal(t, ": value 7", v.String)
-		assert.True(t, ok)
-
-		v, ok = directive.Dictionary["\" key 8 \""]
-		assert.Equal(t, "\" value 8 \"", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_10", func(t *testing.T) {
+			v, ok = directive.Dictionary["key 10"]
+			assert.Equal(t, "value '\" 10", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["' key 9 '"]
-		assert.Equal(t, "' value 9 '", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_11", func(t *testing.T) {
+			v, ok = directive.Dictionary["key 11"]
+			assert.Equal(t, "And Fred said 'yabba dabba doo!' to Barney.", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["key 10"]
-		assert.Equal(t, "value '\" 10", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_12", func(t *testing.T) {
+			v, ok = directive.Dictionary["key \" 12"]
+			assert.Equal(t, "value ' 12", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["key 11"]
-		assert.Equal(t, "And Fred said 'yabba dabba doo!' to Barney.", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_13", func(t *testing.T) {
+			v, ok = directive.Dictionary["$€¥£₩₺₽₹ɃΞȄ"]
+			assert.Equal(t, "$€¥£₩₺₽₹ɃΞȄ", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["key \" 12"]
-		assert.Equal(t, "value ' 12", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_14", func(t *testing.T) {
+			v, ok = directive.Dictionary["YZEPTGMKk_cmuµμnpfazy"]
+			assert.Equal(t, "YZEPTGMKk_cmuµμnpfazy", v.String)
+			assert.True(t, ok)
+		})
 		
-		v, ok = directive.Dictionary["$€¥£₩₺₽₹ɃΞȄ"]
-		assert.Equal(t, "$€¥£₩₺₽₹ɃΞȄ", v.String)
-		assert.True(t, ok)
-		
-		v, ok = directive.Dictionary["YZEPTGMKk_cmuµμnpfazy"]
-		assert.Equal(t, "YZEPTGMKk_cmuµμnpfazy", v.String)
-		assert.True(t, ok)
-		
-		v, ok = directive.Dictionary["a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧"]
-		assert.Equal(t, "a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧", v.String)
-		assert.True(t, ok)
+		t.Run("dict_17_15", func(t *testing.T) {
+			v, ok = directive.Dictionary["a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧"]
+			assert.Equal(t, "a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧", v.String)
+			assert.True(t, ok)
+		})
 	})
 	t.Run("dict_18", func(t *testing.T) {
 		// key with quotes without sorrounding quates are ok
@@ -804,7 +857,4 @@ func TestDictionary(t *testing.T) {
 		assert.Equal(t, EmptyDataError, err.error)
 	})
 
-
-
 }
-
