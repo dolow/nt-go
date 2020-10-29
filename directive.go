@@ -182,40 +182,6 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 		case DirectiveTypeUnknown:
 		case DirectiveTypeText:  // multi line text
 			{
-				/*
-				if d.Type == DirectiveTypeText {
-					if index != lastIndex {
-						marshalErr = &DirectiveMarshalError{
-							error: DifferentLevelOnSameChildError,
-						}
-						break ReadLineLoop
-					}
-				} else if d.Type != DirectiveTypeUnknown {
-					marshalErr = &DirectiveMarshalError{
-						error: DifferentTypesOnTheSameLevelError,
-					}
-					break ReadLineLoop
-				}
-
-				d.Type = DirectiveTypeText
-				contentPart := line[index+1:]
-
-				char, contentIndex := readFirstMeaningfulCharacter(contentPart, false)
-
-				if char == Tab {
-					marshalErr = &DirectiveMarshalError{
-						error: TabInIndentationError,
-					}
-					break ReadLineLoop
-				}
-				if contentIndex == NotFoundIndex {
-					d.Text = append(d.Text, "")
-				} else {
-					// TODO: trailing comment or blank line
-					d.Text = append(d.Text, string(contentPart[contentIndex:]))
-				}
-				*/
-
 				if d.Type == DirectiveTypeText {
 					if index != lastIndex {
 						marshalErr = &DirectiveMarshalError{
@@ -387,7 +353,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 		default: // string or dictionary
 			{
 				dirtyKey, valueIndex := detectKeyBytes(line)
-				// sepIndex := getDictionarySeparatorIndex(line)
+				
 				if dirtyKey == nil && valueIndex == NotFoundIndex {
 					// string
 					if d.Type != DirectiveTypeUnknown {
