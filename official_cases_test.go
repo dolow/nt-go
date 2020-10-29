@@ -891,7 +891,7 @@ func TestHolistic(t *testing.T) {
 
 			key3 := getValueWithAssert(t, rootDict, "  #key3  ")
 			assert.Equal(t, DirectiveTypeString, key3.Type)
-			assert.Equal(t, "#value3  ", key3.String)
+			assert.Equal(t, "  #value3  ", key3.String)
 
 			key4 := getValueWithAssert(t, rootDict, "key 4")
 			assert.Equal(t, DirectiveTypeDictionary, key4.Type)
@@ -922,6 +922,7 @@ func TestHolistic(t *testing.T) {
 
 				key4_4 := getValueWithAssert(t, dict4, "key 4.4")
 				assert.Equal(t, DirectiveTypeList, key4_4.Type)
+				assert.Equal(t, 3, len(key4_4.List))
 
 				list4_4 := key4_4.List
 				{
@@ -934,6 +935,7 @@ func TestHolistic(t *testing.T) {
 					assert.Equal(t, DirectiveTypeList, list4_4[2].Type)
 
 					list4_4_2 := list4_4[2].List
+					assert.Equal(t, 2, len(list4_4_2))
 					{
 						assert.Equal(t, DirectiveTypeString, list4_4_2[0].Type)
 						assert.Equal(t, "value 4.4.3.1", list4_4_2[0].String)
@@ -946,15 +948,18 @@ func TestHolistic(t *testing.T) {
 
 			key5 := getValueWithAssert(t, rootDict, "key 5")
 			assert.Equal(t, DirectiveTypeText, key5.Type)
+			assert.Equal(t, 1, len(key5.Text))
 			assert.Equal(t, "value 5 part 1", key5.Text[0])
 
 			key6 := getValueWithAssert(t, rootDict, "key 6")
 			assert.Equal(t, DirectiveTypeText, key6.Type)
+			assert.Equal(t, 2, len(key6.Text))
 			assert.Equal(t, "value 6 part 1\n", key6.Text[0])
 			assert.Equal(t, "value 6 part 2", key6.Text[1])
 
 			key7 := getValueWithAssert(t, rootDict, "key 7")
 			assert.Equal(t, DirectiveTypeText, key7.Type)
+			assert.Equal(t, 4, len(key7.Text))
 			assert.Equal(t, "value 7 part 1\n", key7.Text[0])
 			assert.Equal(t, "\n", key7.Text[1])
 			assert.Equal(t, "value 7 part 3\n", key7.Text[2])
@@ -964,6 +969,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeList, key8.Type)
 
 			list8 := key8.List
+			assert.Equal(t, 2, len(list8))
 			{
 				assert.Equal(t, DirectiveTypeString, list8[0].Type)
 				assert.Equal(t, "value 8.1", list8[0].String)
@@ -976,6 +982,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeList, key9.Type)
 
 			list9 := key9.List
+			assert.Equal(t, 2, len(list9))
 			{
 				assert.Equal(t, DirectiveTypeString, list9[0].Type)
 				assert.Equal(t, "value 9.1", list9[0].String)
@@ -986,15 +993,18 @@ func TestHolistic(t *testing.T) {
 
 			key10 := getValueWithAssert(t, rootDict, "key 10")
 			assert.Equal(t, DirectiveTypeText, key10.Type)
+			assert.Equal(t, 1, len(key10.Text))
 			assert.Equal(t, "This is a multiline string.  It should end without a newline.", key10.Text[0])
 
 			key11 := getValueWithAssert(t, rootDict, "key 11")
 			assert.Equal(t, DirectiveTypeText, key11.Type)
+			assert.Equal(t, 2, len(key11.Text))
 			assert.Equal(t, "This is a multiline string.  It should end with a newline.\n", key11.Text[0])
 			assert.Equal(t, "", key11.Text[1])
 
 			key12 := getValueWithAssert(t, rootDict, "key 12")
 			assert.Equal(t, DirectiveTypeText, key12.Type)
+			assert.Equal(t, 7, len(key12.Text))
 			assert.Equal(t, "\n", key12.Text[0])
 			assert.Equal(t, "This is another\n", key12.Text[1])
 			assert.Equal(t, "multiline string.\n", key12.Text[2])
@@ -1015,7 +1025,91 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keySrcDir := getValueWithAssert(t, rootDict, "src_dir")
+			assert.Equal(t, DirectiveTypeString, keySrcDir.Type)
+			assert.Equal(t, "/", keySrcDir.String)
+
+			keyExcludes := getValueWithAssert(t, rootDict, "excludes")
+			assert.Equal(t, DirectiveTypeList, keyExcludes.Type)
+
+			listExists := keyExcludes.List
+			assert.Equal(t, 10, len(listExists))
+			{
+				assert.Equal(t, DirectiveTypeString, listExists[0].Type)
+				assert.Equal(t, "/dev", listExists[0].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[1].Type)
+				assert.Equal(t, "/home/*/.cache", listExists[1].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[2].Type)
+				assert.Equal(t, "/root/*/.cache", listExists[2].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[3].Type)
+				assert.Equal(t, "/proc", listExists[3].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[4].Type)
+				assert.Equal(t, "/sys", listExists[4].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[5].Type)
+				assert.Equal(t, "/tmp", listExists[5].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[6].Type)
+				assert.Equal(t, "/var/cache", listExists[6].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[7].Type)
+				assert.Equal(t, "/var/lock", listExists[7].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[8].Type)
+				assert.Equal(t, "/var/run", listExists[8].String)
+
+				assert.Equal(t, DirectiveTypeString, listExists[9].Type)
+				assert.Equal(t, "/var/tmp", listExists[9].String)
+			}
+
+			keyKeep := getValueWithAssert(t, rootDict, "keep")
+			assert.Equal(t, DirectiveTypeDictionary, keyKeep.Type)
+
+			dictKeep := keyKeep.Dictionary
+			{
+				keyHourly := getValueWithAssert(t, dictKeep, "hourly")
+				assert.Equal(t, DirectiveTypeString, keyHourly.Type)
+				assert.Equal(t, "24", keyHourly.String)
+
+				keyDaily := getValueWithAssert(t, dictKeep, "daily")
+				assert.Equal(t, DirectiveTypeString, keyDaily.Type)
+				assert.Equal(t, "7", keyDaily.String)
+
+				keyWeekly := getValueWithAssert(t, dictKeep, "weekly")
+				assert.Equal(t, DirectiveTypeString, keyWeekly.Type)
+				assert.Equal(t, "4", keyWeekly.String)
+
+				keyMonthly := getValueWithAssert(t, dictKeep, "monthly")
+				assert.Equal(t, DirectiveTypeString, keyMonthly.Type)
+				assert.Equal(t, "12", keyMonthly.String)
+
+				keyYearly := getValueWithAssert(t, dictKeep, "yearly")
+				assert.Equal(t, DirectiveTypeString, keyMonthly.Type)
+				assert.Equal(t, "5", keyYearly.String)
+			}
+
+			keyPassphrase := getValueWithAssert(t, rootDict, "passphrase")
+			assert.Equal(t, DirectiveTypeText, keyPassphrase.Type)
+			assert.Equal(t, 4, len(keyPassphrase.Text))
+
+		    assert.Equal(t, "trouper segregate militia airway pricey sweetmeat tartan bookstall\n", keyPassphrase.Text[0])
+		    assert.Equal(t, "obsession charlady twosome silky puffball grubby ranger notation\n", keyPassphrase.Text[1])
+		    assert.Equal(t, "rosebud replicate freshen javelin abbot autocue beater byway\n", keyPassphrase.Text[2])
+		    assert.Equal(t, "", keyPassphrase.Text[3])
+		})
 	})
 
 	t.Run("holistic_3", func(t *testing.T) {
@@ -1024,7 +1118,49 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keyTux := getValueWithAssert(t, rootDict, "tux")
+			assert.Equal(t, DirectiveTypeString, keyTux.Type)
+			assert.Equal(t, "", keyTux.String)
+
+			keyJux := getValueWithAssert(t, rootDict, "jux")
+			assert.Equal(t, DirectiveTypeString, keyJux.Type)
+			assert.Equal(t, "lux", keyJux.String)
+
+			keyDux := getValueWithAssert(t, rootDict, "dux")
+			assert.Equal(t, DirectiveTypeList, keyDux.Type)
+
+			listDux := keyDux.List
+			assert.Equal(t, 6, len(listDux))
+
+			assert.Equal(t, DirectiveTypeString, listDux[0].Type)
+			assert.Equal(t, "bux", listDux[0].String)
+
+			assert.Equal(t, DirectiveTypeString, listDux[1].Type)
+			assert.Equal(t, "", listDux[1].String)
+
+			assert.Equal(t, DirectiveTypeText, listDux[2].Type)
+			assert.Equal(t, 2, len(listDux[2].Text))
+			assert.Equal(t, "\n", listDux[2].Text[0])
+			assert.Equal(t, "", listDux[2].Text[1])
+
+			assert.Equal(t, DirectiveTypeString, listDux[3].Type)
+			assert.Equal(t, "crux", listDux[3].String)
+
+			assert.Equal(t, DirectiveTypeString, listDux[4].Type)
+			assert.Equal(t, "", listDux[4].String)
+
+			assert.Equal(t, DirectiveTypeString, listDux[5].Type)
+			assert.Equal(t, " — ", listDux[5].String)
+		})
 	})
 
 	t.Run("holistic_4", func(t *testing.T) {

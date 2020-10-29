@@ -201,9 +201,9 @@ func TestMarshal(t *testing.T) {
 		})
 
 		t.Run("string elements with unbalanced forwarding spaces", func(t *testing.T) {
-			expect := []string{"string", "elements"}
+			expect := []string{"   string", "elements"}
 			data = []byte(fmt.Sprintf(
-`-    %s
+`- %s
 - %s`,
 				expect[0], expect[1]))
 
@@ -213,7 +213,7 @@ func TestMarshal(t *testing.T) {
 				assert.Nil(t, err)
 				assert.Equal(t, DirectiveTypeList, directive.Type)
 			})
-			t.Run("List should contain trimmed string", func(t *testing.T) {
+			t.Run("List should contain string with leading space", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)
@@ -429,21 +429,21 @@ func TestMarshal(t *testing.T) {
 		t.Run("dictionary string elements with unbalanced spaces", func(t *testing.T) {
 			expect := [][][]string{
 				[][]string {
-					{ "key1", "val1" },
+					{ "key1", "   val1   " },
 					{ "key2", "val2" },
 				},
 				[][]string {
 					{ "key3", "val3" },
-					{ "key4", "val4" },
+					{ "key4", "\tval4\t" },
 				},
 			}
 			data = []byte(fmt.Sprintf(
 `-
-  %s:    %s
+  %s: %s
   %s: %s
 -
      %s: %s
-     %s:   %s`,
+     %s: %s`,
 				expect[0][0][0], expect[0][0][1],
 				expect[0][1][0], expect[0][1][1],
 				expect[1][0][0], expect[1][0][1],
@@ -468,7 +468,7 @@ func TestMarshal(t *testing.T) {
 				}
 			})
 
-			t.Run("Dictionary elements value string should be trimmed", func(t *testing.T) {
+			t.Run("Dictionary elements value string should contain leading and trailing spaces and tabs", func(t *testing.T) {
 				directive, err := subject()
 
 				assert.Nil(t, err)

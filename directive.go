@@ -267,8 +267,10 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 				elementContent := line[index+1:]
 
 				// detect string
-				elementContentChar, charIndex := readFirstMeaningfulCharacter(elementContent, true)
+				elementContentChar, _ := readFirstMeaningfulCharacter(elementContent, true)
 				childIsString := elementContentChar != EmptyChar
+
+				firstLine := line
 
 				// TODO: almost same as dictionary
 				ListChildReadLineLoop: for {
@@ -292,9 +294,6 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 					}
 
 					if nextIndex == index {
-						if char != ListSymbol {
-							// TODO: irregular case
-						}
 						// it is next element
 						readBytesErr = NextDirectiveAppearedError
 						break ListChildReadLineLoop
@@ -330,10 +329,10 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 
 				if childIsString {
 					child.Type = DirectiveTypeString
-					if elementContent[len(elementContent) - 1] == '\n' {
-						child.String = string(elementContent[charIndex:len(elementContent) - 1])
+					if firstLine[len(firstLine) - 1] == '\n' {
+						child.String = string(firstLine[index + 2:len(firstLine) - 1])
 					} else {
-						child.String = string(elementContent[charIndex:])
+						child.String = string(firstLine[index + 2:])
 					}
 				} else {
 					// TODO: elementContent internally converted to bytes.Buufer, inpsect its performance cost
@@ -405,9 +404,10 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 					break ReadLineLoop
 				}
 
+				firstLine := line
 				elementContent := line[valueIndex:]
 
-				firstChar, firstCharIndex := readFirstMeaningfulCharacter(elementContent, true)
+				firstChar, _ := readFirstMeaningfulCharacter(elementContent, true)
 				childIsString := firstChar != EmptyChar
 
 				var char byte
@@ -489,7 +489,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 					}
 				}
 
-				firstChar, firstCharIndex = readFirstMeaningfulCharacter(elementContent, true)
+				firstChar, _ = readFirstMeaningfulCharacter(elementContent, true)
 
 				if firstChar != EmptyChar {
 					child := &Directive{
@@ -499,10 +499,10 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 
 					if childIsString {
 						child.Type = DirectiveTypeString
-						if elementContent[len(elementContent) - 1] == '\n' {
-							child.String = string(elementContent[firstCharIndex:len(elementContent) - 1])
+						if firstLine[len(firstLine) - 1] == '\n' {
+							child.String = string(firstLine[valueIndex:len(firstLine) - 1])
 						} else {
-							child.String = string(elementContent[firstCharIndex:])
+							child.String = string(firstLine[valueIndex:])
 						}
 					} else {
 						if marshalErr = child.Marshal(elementContent); marshalErr != nil {
@@ -718,10 +718,10 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
 /**
  * Specifiaction:
  *   dictionary key is inspected with the following rules;
- *   - line starts with a symbol of multi line text (>), list (-) and comment (#) with trailing space, are not inspected
- *   - line with colon, the key separator symbol (:) with trailing space is object to search dictionary key
- *   - colon must be outside of quotes, otherwise it is not considered as key separator
- *   - bytes from first meaningful character to the index before colon are considered as key
+ *   1. line starts with a symbol of multi line text (>), list (-) and comment (#) with trailing space, are not inspected
+ *   2. line with colon, the key separator symbol (:) with trailing space is subject to search dictionary key
+ *   3. colon must be outside of quotes, otherwise it is not considered as key separator
+ *   4. bytes from first meaningful character to the index before colon are considered as key
  *
  * This function expects line that is already considerd as dictionary.
  * So the test of first meaningful character is skipped.
@@ -740,6 +740,7 @@ func detectKeyBytes(line []byte) ([]byte, int) {
 			quote = EmptyChar
 		}
 
+		// 3.
 		if meaningfulIndex == NotFoundIndex && !unicode.IsSpace(rune(char)) {
 			meaningfulIndex = index
 			if quote == EmptyChar && (char == Quote || char == DoubleQuote) {
@@ -749,10 +750,13 @@ func detectKeyBytes(line []byte) ([]byte, int) {
 		
 		if DictionaryKeySeparator == char && quote == EmptyChar {
 			if index < (len(line) - 1) {
+				// 2. 
 				if unicode.IsSpace(rune(line[index + 1])) {
+					// 4.
 					return line[meaningfulIndex:index], index + 2
 				}
 			} else {
+				// 4.
 				return line[meaningfulIndex:index], index + 1
 			}
 		}
