@@ -861,13 +861,152 @@ func TestEmpty(t *testing.T) {
 }
 
 func TestHolistic(t *testing.T) {	
+	getValueWithAssert := func (t *testing.T, dict map[string]*Directive, key string) *Directive {
+		directive, exists := dict[key]
+		assert.True(t, exists)
+		return directive
+	}
+
 	t.Run("holistic_1", func(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_1/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			key1 := getValueWithAssert(t, rootDict, "key 1")
+			assert.Equal(t, DirectiveTypeString, key1.Type)
+			assert.Equal(t, "value 1", key1.String)
+
+			key2 := getValueWithAssert(t, rootDict, "- key2:")
+			assert.Equal(t, DirectiveTypeString, key2.Type)
+			assert.Equal(t, "value2:", key2.String)
+
+			key3 := getValueWithAssert(t, rootDict, "  #key3  ")
+			assert.Equal(t, DirectiveTypeString, key3.Type)
+			assert.Equal(t, "#value3  ", key3.String)
+
+			key4 := getValueWithAssert(t, rootDict, "key 4")
+			assert.Equal(t, DirectiveTypeDictionary, key4.Type)
+
+			dict4 := key4.Dictionary
+			{
+				key4_1 := getValueWithAssert(t, dict4, "key 4.1")
+				assert.Equal(t, DirectiveTypeString, key4_1.Type)
+				assert.Equal(t, "value 4.1", key4_1.String)
+
+				key4_2 := getValueWithAssert(t, dict4, "key 4.2")
+				assert.Equal(t, DirectiveTypeString, key4_2.Type)
+				assert.Equal(t, "value 4.2", key4_2.String)
+
+				key4_3 := getValueWithAssert(t, dict4, "key 4.3")
+				assert.Equal(t, DirectiveTypeDictionary, key4_3.Type)
+
+				dict4_3 := key4_3.Dictionary
+				{
+					key4_3_1 := getValueWithAssert(t, dict4_3, "key 4.3.1")
+					assert.Equal(t, DirectiveTypeString, key4_3_1.Type)
+					assert.Equal(t, "value 4.3.1", key4_3_1.String)
+
+					key4_3_2 := getValueWithAssert(t, dict4_3, "key 4.3.2")
+					assert.Equal(t, DirectiveTypeString, key4_3_2.Type)
+					assert.Equal(t, "value 4.3.2", key4_3_2.String)
+				}
+
+				key4_4 := getValueWithAssert(t, dict4, "key 4.4")
+				assert.Equal(t, DirectiveTypeList, key4_4.Type)
+
+				list4_4 := key4_4.List
+				{
+					assert.Equal(t, DirectiveTypeString, list4_4[0].Type)
+					assert.Equal(t, "value 4.4.1", list4_4[0].String)
+
+					assert.Equal(t, DirectiveTypeString, list4_4[1].Type)
+					assert.Equal(t, "value 4.4.2", list4_4[1].String)
+
+					assert.Equal(t, DirectiveTypeList, list4_4[2].Type)
+
+					list4_4_2 := list4_4[2].List
+					{
+						assert.Equal(t, DirectiveTypeString, list4_4_2[0].Type)
+						assert.Equal(t, "value 4.4.3.1", list4_4_2[0].String)
+
+						assert.Equal(t, DirectiveTypeString, list4_4_2[1].Type)
+						assert.Equal(t, "value 4.4.3.2", list4_4_2[1].String)
+					}
+				}
+			}
+
+			key5 := getValueWithAssert(t, rootDict, "key 5")
+			assert.Equal(t, DirectiveTypeText, key5.Type)
+			assert.Equal(t, "value 5 part 1", key5.Text[0])
+
+			key6 := getValueWithAssert(t, rootDict, "key 6")
+			assert.Equal(t, DirectiveTypeText, key6.Type)
+			assert.Equal(t, "value 6 part 1\n", key6.Text[0])
+			assert.Equal(t, "value 6 part 2", key6.Text[1])
+
+			key7 := getValueWithAssert(t, rootDict, "key 7")
+			assert.Equal(t, DirectiveTypeText, key7.Type)
+			assert.Equal(t, "value 7 part 1\n", key7.Text[0])
+			assert.Equal(t, "\n", key7.Text[1])
+			assert.Equal(t, "value 7 part 3\n", key7.Text[2])
+			assert.Equal(t, "", key7.Text[3])
+
+			key8 := getValueWithAssert(t, rootDict, "key 8")
+			assert.Equal(t, DirectiveTypeList, key8.Type)
+
+			list8 := key8.List
+			{
+				assert.Equal(t, DirectiveTypeString, list8[0].Type)
+				assert.Equal(t, "value 8.1", list8[0].String)
+
+				assert.Equal(t, DirectiveTypeString, list8[1].Type)
+				assert.Equal(t, "value 8.2", list8[1].String)
+			}
+
+			key9 := getValueWithAssert(t, rootDict, "key 9")
+			assert.Equal(t, DirectiveTypeList, key9.Type)
+
+			list9 := key9.List
+			{
+				assert.Equal(t, DirectiveTypeString, list9[0].Type)
+				assert.Equal(t, "value 9.1", list9[0].String)
+
+				assert.Equal(t, DirectiveTypeString, list9[1].Type)
+				assert.Equal(t, "value 9.2", list9[1].String)
+			}
+
+			key10 := getValueWithAssert(t, rootDict, "key 10")
+			assert.Equal(t, DirectiveTypeText, key10.Type)
+			assert.Equal(t, "This is a multiline string.  It should end without a newline.", key10.Text[0])
+
+			key11 := getValueWithAssert(t, rootDict, "key 11")
+			assert.Equal(t, DirectiveTypeText, key11.Type)
+			assert.Equal(t, "This is a multiline string.  It should end with a newline.\n", key11.Text[0])
+			assert.Equal(t, "", key11.Text[1])
+
+			key12 := getValueWithAssert(t, rootDict, "key 12")
+			assert.Equal(t, DirectiveTypeText, key12.Type)
+			assert.Equal(t, "\n", key12.Text[0])
+			assert.Equal(t, "This is another\n", key12.Text[1])
+			assert.Equal(t, "multiline string.\n", key12.Text[2])
+			assert.Equal(t, "\n", key12.Text[3])
+			assert.Equal(t, "This continues the same string.\n", key12.Text[4])
+			assert.Equal(t, "\n", key12.Text[5])
+			assert.Equal(t, "", key12.Text[6])
+
+			key13 := getValueWithAssert(t, rootDict, "key 13")
+			assert.Equal(t, DirectiveTypeString, key13.Type)
+			assert.Equal(t, "", key13.String)
+		})
 	})
 
 	t.Run("holistic_2", func(t *testing.T) {
