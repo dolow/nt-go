@@ -1170,7 +1170,38 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keyOutput := getValueWithAssert(t, rootDict, "output current")
+			assert.Equal(t, DirectiveTypeString, keyOutput.Type)
+			assert.Equal(t, "out", keyOutput.String)
+
+			keyDescription := getValueWithAssert(t, rootDict, "description")
+			assert.Equal(t, DirectiveTypeString, keyDescription.Type)
+			assert.Equal(t, "Output current", keyDescription.String)
+
+			keyRange := getValueWithAssert(t, rootDict, "range")
+			assert.Equal(t, DirectiveTypeString, keyRange.Type)
+			assert.Equal(t, "V(gnda) + 0.5V < V < V(vdda) - 0.5V; -500μA <= I <= 500μA", keyRange.String)
+
+			keyBehavior := getValueWithAssert(t, rootDict, "behavior")
+			assert.Equal(t, DirectiveTypeText, keyBehavior.Type)
+			assert.Equal(t, 4, len(keyBehavior.Text))
+			assert.Equal(t, "current:\n", keyBehavior.Text[0])
+			assert.Equal(t, "    I = On*Iout;\n", keyBehavior.Text[1])
+			assert.Equal(t, "    IoutMeas=I with prail=vdda; nrail=gnda", keyBehavior.Text[3])
+
+			keyNominal := getValueWithAssert(t, rootDict, "nominal")
+			assert.Equal(t, DirectiveTypeString, keyNominal.Type)
+			assert.Equal(t, "V=1.25V+1Ω*I", keyNominal.String)
+		})
 	})
 
 	t.Run("holistic_5", func(t *testing.T) {
@@ -1180,7 +1211,62 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keyPresident := getValueWithAssert(t, rootDict, "president")
+			assert.Equal(t, DirectiveTypeDictionary, keyPresident.Type)
+			
+			dictPresident := keyPresident.Dictionary
+			{
+				keyName := getValueWithAssert(t, dictPresident, "name")
+				assert.Equal(t, DirectiveTypeString, keyName.Type)
+				assert.Equal(t, "Katheryn McDaniel", keyName.String)
+
+				keyAddress := getValueWithAssert(t, dictPresident, "address")
+				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
+				assert.Equal(t, 2, len(keyAddress.Text))
+				assert.Equal(t, "138 Almond Street\n", keyAddress.Text[0])
+				assert.Equal(t, "Topika, Kansas 20697", keyAddress.Text[1])
+
+				keyPhone := getValueWithAssert(t, dictPresident, "phone")
+				assert.Equal(t, DirectiveTypeDictionary, keyPhone.Type)
+
+				dictPhone := keyPhone.Dictionary
+				{
+					keyCell := getValueWithAssert(t, dictPhone, "cell")
+					assert.Equal(t, DirectiveTypeString, keyCell.Type)
+					assert.Equal(t, "1-210-835-5297", keyCell.String)
+
+					keyHome := getValueWithAssert(t, dictPhone, "home")
+					assert.Equal(t, DirectiveTypeString, keyHome.Type)
+					assert.Equal(t, "1-210-478-8470", keyHome.String)
+				}
+
+				keyEmail := getValueWithAssert(t, dictPresident, "email")
+				assert.Equal(t, DirectiveTypeString, keyEmail.Type)
+				assert.Equal(t, "KateMcD@aol.com", keyEmail.String)
+
+				keyKids := getValueWithAssert(t, dictPresident, "kids")
+				assert.Equal(t, DirectiveTypeList, keyKids.Type)
+				assert.Equal(t, 2, len(keyKids.List))
+				
+				listKids := keyKids.List
+				{
+					assert.Equal(t, DirectiveTypeString, listKids[0].Type)
+					assert.Equal(t, "Joanie", listKids[0].String)
+
+					assert.Equal(t, DirectiveTypeString, listKids[1].Type)
+					assert.Equal(t, "Terrance", listKids[1].String)
+				}
+			}
+		})
 	})
 
 	t.Run("holistic_6", func(t *testing.T) {
@@ -1190,7 +1276,55 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keyVp := getValueWithAssert(t, rootDict, "vice president")
+			assert.Equal(t, DirectiveTypeDictionary, keyVp.Type)
+
+			dictVp := keyVp.Dictionary
+			{
+				keyName := getValueWithAssert(t, dictVp, "name")
+				assert.Equal(t, DirectiveTypeString, keyName.Type)
+				assert.Equal(t, "Margaret Hodge", keyName.String)
+
+				keyAddress := getValueWithAssert(t, dictVp, "address")
+				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
+				assert.Equal(t, 2, len(keyAddress.Text))
+				assert.Equal(t, "2586 Marigold Lane\n", keyAddress.Text[0])
+				assert.Equal(t, "Topika, Kansas 20682", keyAddress.Text[1])
+
+				keyPhone := getValueWithAssert(t, dictVp, "phone")
+				assert.Equal(t, DirectiveTypeString, keyPhone.Type)
+				assert.Equal(t, "1-470-974-0398", keyPhone.String)
+
+				keyEmail := getValueWithAssert(t, dictVp, "email")
+				assert.Equal(t, DirectiveTypeString, keyEmail.Type)
+				assert.Equal(t, "margarett.hodge@uk.edu", keyEmail.String)
+
+				keyKids := getValueWithAssert(t, dictVp, "kids")
+				assert.Equal(t, DirectiveTypeList, keyKids.Type)
+				assert.Equal(t, 3, len(keyKids.List))
+				
+				listKids := keyKids.List
+				{
+					assert.Equal(t, DirectiveTypeString, listKids[0].Type)
+					assert.Equal(t, "Arnie", listKids[0].String)
+
+					assert.Equal(t, DirectiveTypeString, listKids[1].Type)
+					assert.Equal(t, "Zach", listKids[1].String)
+
+					assert.Equal(t, DirectiveTypeString, listKids[2].Type)
+					assert.Equal(t, "Maggie", listKids[2].String)
+				}
+			}
+		})
 	})
 
 	t.Run("holistic_7", func(t *testing.T) {
@@ -1200,6 +1334,30 @@ func TestHolistic(t *testing.T) {
 		directive := &Directive{}
 		err := directive.Marshal(dat)
 
-		assert.Nil(t, err)
+		t.Run("should marshal successfully", func(t *testing.T) {
+			assert.Nil(t, err)
+		})
+
+		t.Run("should marshal with collect structure", func(t *testing.T) {
+			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
+
+			rootDict := directive.Dictionary
+			
+			keyTreasurer := getValueWithAssert(t, rootDict, "treasurer")
+			assert.Equal(t, DirectiveTypeDictionary, keyTreasurer.Type)
+
+			dictTreasurer := keyTreasurer.Dictionary
+			{
+				keyName := getValueWithAssert(t, dictTreasurer, "name")
+				assert.Equal(t, DirectiveTypeString, keyName.Type)
+				assert.Equal(t, "	       Fumiko\tPurvis    \t", keyName.String)
+
+				keyAddress := getValueWithAssert(t, dictTreasurer, "address")
+				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
+				assert.Equal(t, 2, len(keyAddress.Text))
+				assert.Equal(t, "\t 3636 Buffalo Ave \t\n", keyAddress.Text[0])
+				assert.Equal(t, "\t Topika, Kansas 20692\t ", keyAddress.Text[1])
+			}
+		})
 	})
 }

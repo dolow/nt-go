@@ -222,12 +222,16 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 							break TextChildReadLineLoop
 						}
 
-						_, contentIndex := readFirstMeaningfulCharacter(line[newIndex + 1:], false)
-
-						if contentIndex == NotFoundIndex {
+						if len(line) <= newIndex + 1 {
 							d.Text = append(d.Text, "")
 						} else {
-							d.Text = append(d.Text, string(line[newIndex + 1 + contentIndex:]))
+							if line[newIndex + 1] == LineBreak {
+								// text symbol with no space
+								d.Text = append(d.Text, "\n")
+							} else {
+								// after text symbol(>) and space
+								d.Text = append(d.Text, string(line[newIndex + 2:]))
+							}
 						}
 					} else {
 						trailingBlankLine = true
