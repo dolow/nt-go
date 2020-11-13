@@ -33,7 +33,7 @@ func TestString(t *testing.T) {
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 		child, exists := directive.Dictionary["what makes it green"]
-		
+
 		assert.True(t, exists)
 		assert.Equal(t, DirectiveTypeString, child.Type)
 		assert.Equal(t, "\tgreen\tchilies\t", child.String)
@@ -51,7 +51,7 @@ func TestString(t *testing.T) {
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 		child, exists := directive.Dictionary["key"]
-		
+
 		assert.True(t, exists)
 		assert.Equal(t, DirectiveTypeString, child.Type)
 		assert.Equal(t, `value " value`, child.String)
@@ -69,7 +69,7 @@ func TestString(t *testing.T) {
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 		child, exists := directive.Dictionary["key"]
-		
+
 		assert.True(t, exists)
 		assert.Equal(t, DirectiveTypeString, child.Type)
 		assert.Equal(t, `value ' value`, child.String)
@@ -115,7 +115,7 @@ func TestString(t *testing.T) {
 
 		assert.NotNil(t, err)
 		assert.Equal(t, StringWithNewLineError, err.error)
-		
+
 	})
 }
 
@@ -222,7 +222,7 @@ func TestText(t *testing.T) {
 
 		t.Run("text_7_1", func(t *testing.T) {
 			child := directive.Dictionary["no newlines"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -230,7 +230,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_2", func(t *testing.T) {
 			child := directive.Dictionary["leading newline"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 3, len(child.Text))
 			assert.Equal(t, "\n", child.Text[0])
@@ -239,7 +239,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_3", func(t *testing.T) {
 			child := directive.Dictionary["internal newline"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 3, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -248,7 +248,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_4", func(t *testing.T) {
 			child := directive.Dictionary["trailing newline"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 3, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -257,7 +257,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_5", func(t *testing.T) {
 			child := directive.Dictionary["leading, internal, and trailing newline"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 5, len(child.Text))
 			assert.Equal(t, "\n", child.Text[0])
@@ -268,7 +268,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_6", func(t *testing.T) {
 			child := directive.Dictionary["leading newlines"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 4, len(child.Text))
 			assert.Equal(t, "\n", child.Text[0])
@@ -278,7 +278,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_7", func(t *testing.T) {
 			child := directive.Dictionary["internal newlines"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 4, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -288,7 +288,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_8", func(t *testing.T) {
 			child := directive.Dictionary["trailing newlines"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 4, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -298,7 +298,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_9", func(t *testing.T) {
 			child := directive.Dictionary["leading, internal, and trailing newlines"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 8, len(child.Text))
 			assert.Equal(t, "\n", child.Text[0])
@@ -312,7 +312,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_10", func(t *testing.T) {
 			child := directive.Dictionary["leading blank line"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -320,7 +320,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_11", func(t *testing.T) {
 			child := directive.Dictionary["internal blank line"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -328,7 +328,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_12", func(t *testing.T) {
 			child := directive.Dictionary["trailing blank line"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -336,7 +336,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_13", func(t *testing.T) {
 			child := directive.Dictionary["leading comment"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
@@ -344,7 +344,7 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_14", func(t *testing.T) {
 			child := directive.Dictionary["internal comment"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 3\n", child.Text[0])
@@ -352,12 +352,12 @@ func TestText(t *testing.T) {
 		})
 		t.Run("text_7_15", func(t *testing.T) {
 			child := directive.Dictionary["trailing comment"]
-			
+
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
-		})                       
+		})
 	})
 }
 
@@ -371,7 +371,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.Nil(t, err)
-		
+
 		assert.Equal(t, DirectiveTypeList, directive.Type)
 		assert.Equal(t, 2, len(directive.List))
 		for _, entity := range directive.List {
@@ -389,7 +389,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.Nil(t, err)
-		
+
 		assert.Equal(t, DirectiveTypeList, directive.Type)
 		assert.Equal(t, 5, len(directive.List))
 
@@ -459,7 +459,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.Nil(t, err)
-		
+
 		for i, entity := range directive.List {
 			if i == 9 {
 				assert.Equal(t, DirectiveTypeText, entity.Type)
@@ -507,23 +507,23 @@ func TestList(t *testing.T) {
 	})
 }
 
-func TestDictionary(t *testing.T) {	
+func TestDictionary(t *testing.T) {
 	t.Run("dict_01", func(t *testing.T) {
 		expect := &Directive{
 			Type: DirectiveTypeDictionary,
 			Dictionary: map[string]*Directive{
 				"key1": &Directive{
-					Type: DirectiveTypeString,
+					Type:   DirectiveTypeString,
 					String: "",
 				},
 				"key2": &Directive{
-					Type: DirectiveTypeString,
+					Type:   DirectiveTypeString,
 					String: "",
 				},
 			},
 		}
 		dat, _ := ioutil.ReadFile("./test/cases/dict_01/load_in.nt")
-		
+
 		directive := &Directive{}
 		directive.Marshal(dat)
 		assert.Equal(t, len(expect.Dictionary), len(directive.Dictionary))
@@ -592,7 +592,7 @@ func TestDictionary(t *testing.T) {
 		directive := &Directive{}
 
 		err := directive.Marshal(dat)
-		
+
 		assert.NotNil(t, err)
 		// TODO: identify invalid indentation
 		assert.Equal(t, StringHasChildError, err.error)
@@ -739,13 +739,13 @@ func TestDictionary(t *testing.T) {
 			assert.Equal(t, "> value 5", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_6", func(t *testing.T) {
 			v, ok = directive.Dictionary["# key 6"]
 			assert.Equal(t, "#value 6", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_7", func(t *testing.T) {
 			v, ok = directive.Dictionary[": key 7"]
 			assert.Equal(t, ": value 7", v.String)
@@ -757,43 +757,43 @@ func TestDictionary(t *testing.T) {
 			assert.Equal(t, "\" value 8 \"", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_9", func(t *testing.T) {
 			v, ok = directive.Dictionary["' key 9 '"]
 			assert.Equal(t, "' value 9 '", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_10", func(t *testing.T) {
 			v, ok = directive.Dictionary["key 10"]
 			assert.Equal(t, "value '\" 10", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_11", func(t *testing.T) {
 			v, ok = directive.Dictionary["key 11"]
 			assert.Equal(t, "And Fred said 'yabba dabba doo!' to Barney.", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_12", func(t *testing.T) {
 			v, ok = directive.Dictionary["key \" 12"]
 			assert.Equal(t, "value ' 12", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_13", func(t *testing.T) {
 			v, ok = directive.Dictionary["$€¥£₩₺₽₹ɃΞȄ"]
 			assert.Equal(t, "$€¥£₩₺₽₹ɃΞȄ", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_14", func(t *testing.T) {
 			v, ok = directive.Dictionary["YZEPTGMKk_cmuµμnpfazy"]
 			assert.Equal(t, "YZEPTGMKk_cmuµμnpfazy", v.String)
 			assert.True(t, ok)
 		})
-		
+
 		t.Run("dict_17_15", func(t *testing.T) {
 			v, ok = directive.Dictionary["a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧"]
 			assert.Equal(t, "a-zA-Z%√{us}{cur}][-^/()\\w·⁻⁰¹²³⁴⁵⁶⁷⁸⁹°ÅΩƱΩ℧", v.String)
@@ -840,7 +840,7 @@ func TestDictionary(t *testing.T) {
 	})
 }
 
-func TestEmpty(t *testing.T) {	
+func TestEmpty(t *testing.T) {
 	t.Run("empty_1", func(t *testing.T) {
 		// empty content should be null
 		dat, _ := ioutil.ReadFile("./test/cases/empty_1/load_in.nt")
@@ -860,8 +860,8 @@ func TestEmpty(t *testing.T) {
 	})
 }
 
-func TestHolistic(t *testing.T) {	
-	getValueWithAssert := func (t *testing.T, dict map[string]*Directive, key string) *Directive {
+func TestHolistic(t *testing.T) {
+	getValueWithAssert := func(t *testing.T, dict map[string]*Directive, key string) *Directive {
 		directive, exists := dict[key]
 		assert.True(t, exists)
 		return directive
@@ -1033,7 +1033,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keySrcDir := getValueWithAssert(t, rootDict, "src_dir")
 			assert.Equal(t, DirectiveTypeString, keySrcDir.Type)
 			assert.Equal(t, "/", keySrcDir.String)
@@ -1105,10 +1105,10 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeText, keyPassphrase.Type)
 			assert.Equal(t, 4, len(keyPassphrase.Text))
 
-		    assert.Equal(t, "trouper segregate militia airway pricey sweetmeat tartan bookstall\n", keyPassphrase.Text[0])
-		    assert.Equal(t, "obsession charlady twosome silky puffball grubby ranger notation\n", keyPassphrase.Text[1])
-		    assert.Equal(t, "rosebud replicate freshen javelin abbot autocue beater byway\n", keyPassphrase.Text[2])
-		    assert.Equal(t, "", keyPassphrase.Text[3])
+			assert.Equal(t, "trouper segregate militia airway pricey sweetmeat tartan bookstall\n", keyPassphrase.Text[0])
+			assert.Equal(t, "obsession charlady twosome silky puffball grubby ranger notation\n", keyPassphrase.Text[1])
+			assert.Equal(t, "rosebud replicate freshen javelin abbot autocue beater byway\n", keyPassphrase.Text[2])
+			assert.Equal(t, "", keyPassphrase.Text[3])
 		})
 	})
 
@@ -1126,7 +1126,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keyTux := getValueWithAssert(t, rootDict, "tux")
 			assert.Equal(t, DirectiveTypeString, keyTux.Type)
 			assert.Equal(t, "", keyTux.String)
@@ -1178,7 +1178,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keyOutput := getValueWithAssert(t, rootDict, "output current")
 			assert.Equal(t, DirectiveTypeString, keyOutput.Type)
 			assert.Equal(t, "out", keyOutput.String)
@@ -1219,10 +1219,10 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keyPresident := getValueWithAssert(t, rootDict, "president")
 			assert.Equal(t, DirectiveTypeDictionary, keyPresident.Type)
-			
+
 			dictPresident := keyPresident.Dictionary
 			{
 				keyName := getValueWithAssert(t, dictPresident, "name")
@@ -1256,7 +1256,7 @@ func TestHolistic(t *testing.T) {
 				keyKids := getValueWithAssert(t, dictPresident, "kids")
 				assert.Equal(t, DirectiveTypeList, keyKids.Type)
 				assert.Equal(t, 2, len(keyKids.List))
-				
+
 				listKids := keyKids.List
 				{
 					assert.Equal(t, DirectiveTypeString, listKids[0].Type)
@@ -1284,7 +1284,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keyVp := getValueWithAssert(t, rootDict, "vice president")
 			assert.Equal(t, DirectiveTypeDictionary, keyVp.Type)
 
@@ -1311,7 +1311,7 @@ func TestHolistic(t *testing.T) {
 				keyKids := getValueWithAssert(t, dictVp, "kids")
 				assert.Equal(t, DirectiveTypeList, keyKids.Type)
 				assert.Equal(t, 3, len(keyKids.List))
-				
+
 				listKids := keyKids.List
 				{
 					assert.Equal(t, DirectiveTypeString, listKids[0].Type)
@@ -1342,7 +1342,7 @@ func TestHolistic(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
-			
+
 			keyTreasurer := getValueWithAssert(t, rootDict, "treasurer")
 			assert.Equal(t, DirectiveTypeDictionary, keyTreasurer.Type)
 

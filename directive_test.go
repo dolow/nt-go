@@ -177,7 +177,7 @@ func TestMarshal(t *testing.T) {
 		t.Run("string elements", func(t *testing.T) {
 			expect := []string{"string", "elements"}
 			data = []byte(fmt.Sprintf(
-`- %s
+				`- %s
 - %s`,
 				expect[0], expect[1]))
 
@@ -203,7 +203,7 @@ func TestMarshal(t *testing.T) {
 		t.Run("string elements with unbalanced forwarding spaces", func(t *testing.T) {
 			expect := []string{"   string", "elements"}
 			data = []byte(fmt.Sprintf(
-`- %s
+				`- %s
 - %s`,
 				expect[0], expect[1]))
 
@@ -229,11 +229,11 @@ func TestMarshal(t *testing.T) {
 
 		t.Run("text elements", func(t *testing.T) {
 			expect := [][]string{
-				[]string { "aaaa", "bbbb" },
-				[]string { "cccc", "dddd" },
+				[]string{"aaaa", "bbbb"},
+				[]string{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
   > %s
   > %s
 -
@@ -260,7 +260,7 @@ func TestMarshal(t *testing.T) {
 					assert.Equal(t, DirectiveTypeText, element.Type)
 					for j := 0; j < len(element.Text); j++ {
 						e := expect[i][j]
-						if j != len(element.Text) - 1 {
+						if j != len(element.Text)-1 {
 							e = fmt.Sprintf("%s\n", e)
 						}
 						assert.Equal(t, e, element.Text[j])
@@ -271,11 +271,11 @@ func TestMarshal(t *testing.T) {
 
 		t.Run("text elements with unbalanced indentations", func(t *testing.T) {
 			expect := [][]string{
-				[]string { "aaaa", "bbbb" },
-				[]string { "cccc", "dddd" },
+				[]string{"aaaa", "bbbb"},
+				[]string{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
   > %s
   > %s
 -
@@ -297,18 +297,18 @@ func TestMarshal(t *testing.T) {
 
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
-					assert.Equal(t, directive.Depth + 1, element.Depth)
+					assert.Equal(t, directive.Depth+1, element.Depth)
 				}
 			})
 		})
 
 		t.Run("list elements", func(t *testing.T) {
 			expect := [][]string{
-				[]string { "aaaa", "bbbb" },
-				[]string { "cccc", "dddd" },
+				[]string{"aaaa", "bbbb"},
+				[]string{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
   - %s
   - %s
 -
@@ -344,11 +344,11 @@ func TestMarshal(t *testing.T) {
 
 		t.Run("list elements with unbalanced indentations", func(t *testing.T) {
 			expect := [][]string{
-				[]string { "aaaa", "bbbb" },
-				[]string { "cccc", "dddd" },
+				[]string{"aaaa", "bbbb"},
+				[]string{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
      - %s
      - %s
 -
@@ -372,9 +372,9 @@ func TestMarshal(t *testing.T) {
 
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
-					assert.Equal(t, directive.Depth + 1, element.Depth)
+					assert.Equal(t, directive.Depth+1, element.Depth)
 					for j := 0; j < len(element.List); j++ {
-						assert.Equal(t, element.Depth + 1, element.List[j].Depth)
+						assert.Equal(t, element.Depth+1, element.List[j].Depth)
 					}
 				}
 			})
@@ -382,17 +382,17 @@ func TestMarshal(t *testing.T) {
 
 		t.Run("dictionary string elements", func(t *testing.T) {
 			expect := [][][]string{
-				[][]string {
-					{ "key1", "val1" },
-					{ "key2", "val2" },
+				[][]string{
+					{"key1", "val1"},
+					{"key2", "val2"},
 				},
-				[][]string {
-					{ "key3", "val3" },
-					{ "key4", "val4" },
+				[][]string{
+					{"key3", "val3"},
+					{"key4", "val4"},
 				},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
   %s: %s
   %s: %s
 -
@@ -428,17 +428,17 @@ func TestMarshal(t *testing.T) {
 
 		t.Run("dictionary string elements with unbalanced spaces", func(t *testing.T) {
 			expect := [][][]string{
-				[][]string {
-					{ "key1", "   val1   " },
-					{ "key2", "val2" },
+				[][]string{
+					{"key1", "   val1   "},
+					{"key2", "val2"},
 				},
-				[][]string {
-					{ "key3", "val3" },
-					{ "key4", "\tval4\t" },
+				[][]string{
+					{"key3", "val3"},
+					{"key4", "\tval4\t"},
 				},
 			}
 			data = []byte(fmt.Sprintf(
-`-
+				`-
   %s: %s
   %s: %s
 -
@@ -464,7 +464,7 @@ func TestMarshal(t *testing.T) {
 				for i := 0; i < len(directive.List); i++ {
 					element := directive.List[i]
 
-					assert.Equal(t, element.Depth + 1, element.Dictionary[expect[i][0][0]].Depth)
+					assert.Equal(t, element.Depth+1, element.Dictionary[expect[i][0][0]].Depth)
 				}
 			})
 
@@ -483,14 +483,13 @@ func TestMarshal(t *testing.T) {
 		})
 	})
 
-
 	t.Run("dictionary", func(t *testing.T) {
 		t.Run("string elements", func(t *testing.T) {
-			expectKey   := []string{"key1",   "key2"}
+			expectKey := []string{"key1", "key2"}
 			expectValue := []string{"value1", "value2"}
 
 			data = []byte(fmt.Sprintf(
-`%s: %s
+				`%s: %s
 %s: %s`,
 				expectKey[0], expectValue[0],
 				expectKey[1], expectValue[1],
@@ -515,12 +514,11 @@ func TestMarshal(t *testing.T) {
 	})
 }
 
-
 func TestUnmarshal(t *testing.T) {
 
 	var data []byte
 	var indentSize int
-	var depth      int
+	var depth int
 
 	expect := func() string { return "" }
 
@@ -532,7 +530,7 @@ func TestUnmarshal(t *testing.T) {
 	subject := func() string {
 		directive := &Directive{
 			IndentSize: indentSize,
-			Depth: depth,
+			Depth:      depth,
 		}
 		directive.Marshal(data)
 		return directive.Unmarshal()
@@ -562,13 +560,13 @@ func TestUnmarshal(t *testing.T) {
 			indentSize = 4
 
 			expect = func() string {
-				indent := fmt.Sprintf("%*s", depth * indentSize, "")
+				indent := fmt.Sprintf("%*s", depth*indentSize, "")
 				return fmt.Sprintf("%s%s%s%s", indent, string(line1), indent, string(line2))
 			}
 
 			t.Run("should return text with indentation", func(t *testing.T) {
 				assert.Equal(t, expect(), subject())
-			})	
+			})
 		})
 	})
 
@@ -596,13 +594,13 @@ func TestUnmarshal(t *testing.T) {
 			indentSize = 4
 
 			expect = func() string {
-				indent := fmt.Sprintf("%*s", depth * indentSize, "")
+				indent := fmt.Sprintf("%*s", depth*indentSize, "")
 				return fmt.Sprintf("%s%s%s%s", indent, string(line1), indent, string(line2))
 			}
 
 			t.Run("should return text with indentation", func(t *testing.T) {
 				assert.Equal(t, expect(), subject())
-			})	
+			})
 		})
 	})
 
@@ -633,12 +631,12 @@ func TestUnmarshal(t *testing.T) {
 			indentSize = 4
 
 			expect1 := func() string {
-				indent := fmt.Sprintf("%*s", depth * indentSize, "")
+				indent := fmt.Sprintf("%*s", depth*indentSize, "")
 				return fmt.Sprintf("%s%s\n%s%s", indent, string(line1), indent, string(line2))
 			}
 
 			expect2 := func() string {
-				indent := fmt.Sprintf("%*s", depth * indentSize, "")
+				indent := fmt.Sprintf("%*s", depth*indentSize, "")
 				return fmt.Sprintf("%s%s\n%s%s", indent, string(line2), indent, string(line1))
 			}
 
@@ -646,7 +644,7 @@ func TestUnmarshal(t *testing.T) {
 				// dictionary is unordered
 				result := subject()
 				assert.True(t, expect1() == result || expect2() == result)
-			})	
+			})
 		})
 	})
 }
@@ -668,11 +666,11 @@ func TestDetectKeyBytes(t *testing.T) {
 		[]string{`>:-#"\">:: >:-#'\'>::`, `>:-#"\">:`},
 		[]string{`:`, ``},
 		[]string{`~!@#$%^&*()_+-1234567890{}[]|\;<>?,./: ~!@#$%^&*()_+-1234567890{}[]|\:;<>?,./`, `~!@#$%^&*()_+-1234567890{}[]|\;<>?,./`},
-		[]string{`'- key 3': - value 3`, `'- key 3'`}, // not sanitize
-		[]string{`'key 4: ': value 4:`, `'key 4: '`}, // not sanitize
-		[]string{`'> key 5': > value 5`, `'> key 5'`}, // not sanitize
-		[]string{`'# key 6': #value 6`, `'# key 6'`}, // not sanitize
-		[]string{`': key 7': : value 7`, `': key 7'`}, // not sanitize
+		[]string{`'- key 3': - value 3`, `'- key 3'`},       // not sanitize
+		[]string{`'key 4: ': value 4:`, `'key 4: '`},        // not sanitize
+		[]string{`'> key 5': > value 5`, `'> key 5'`},       // not sanitize
+		[]string{`'# key 6': #value 6`, `'# key 6'`},        // not sanitize
+		[]string{`': key 7': : value 7`, `': key 7'`},       // not sanitize
 		[]string{`'" key 8 "': " value 8 "`, `'" key 8 "'`}, // not sanitize
 		[]string{`"' key 9 '": ' value 9 '`, `"' key 9 '"`}, // not sanitize
 		[]string{`key 10: value '" 10`, `key 10`},
@@ -694,14 +692,13 @@ func TestDetectKeyBytes(t *testing.T) {
 	}
 }
 
-
 func TestReadTextDirective(t *testing.T) {
 
 	var directive *Directive
 
-	var index     int
+	var index int
 	var firstLine []byte
-	var buffer    *bytes.Buffer
+	var buffer *bytes.Buffer
 
 	var content []byte
 
@@ -727,7 +724,7 @@ func TestReadTextDirective(t *testing.T) {
 			index = 2
 			firstLine = []byte("  > first line\n")
 			content = []byte(
-`  > second line
+				`  > second line
   > third line
 - list`)
 		}
@@ -900,9 +897,9 @@ func TestReadTextDirective(t *testing.T) {
 			firstLine = []byte("  > first line\n")
 
 			t.Run("when following line is deeper", func(t *testing.T) {
-				
+
 				contentPh := "    %s"
-				
+
 				t.Run("when following line is text", func(t *testing.T) {
 
 					condition = func() {
