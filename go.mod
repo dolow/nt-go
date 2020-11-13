@@ -1,4 +1,4 @@
-module https://github.com/dolow/nt-go
+module github.com/dolow/nt-go
 
 go 1.14
 
