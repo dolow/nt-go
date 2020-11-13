@@ -1,4 +1,4 @@
-package nestedtext
+package ntgo
 
 import (
 	"bytes"

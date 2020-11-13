@@ -1,4 +1,4 @@
-package nestedtext
+package ntgo
 
 import (
 	"bytes"
@@ -25,18 +25,18 @@ const (
 )
 
 var (
-	NextDirectiveAppearedError        = errors.New("nestedtext: next directive appeared")
-	DifferentTypesOnTheSameLevelError = errors.New("nestedtext: can not place different types of entities on the same level")
-	DictionaryKeyNestedQuotesError    = errors.New("nestedtext: quoted dictionary key can not contain any quotes")
-	EmptyDataError                    = errors.New("nestedtext: data can not be empty")
-	RootLevelHasIndentError           = errors.New("nestedtext: root level must not be indented")
-	TabInIndentationError             = errors.New("nestedtext: indent can not contain tab")
-	RootStringError                   = errors.New("nestedtext: no string allowed on root level")
-	StringHasChildError               = errors.New("nestedtext: string type can not have child")
-	TextHasChildError                 = errors.New("nestedtext: text type can not have child")
-	DifferentLevelOnSameChildError    = errors.New("nestedtext: child elements have dirfferent leves")
-	StringWithNewLineError            = errors.New("nestedtext: string type can not have line break")
-	DictionaryDuplicateKeyError       = errors.New("nestedtext: dictionary type can not have the same key")
+	NextDirectiveAppearedError        = errors.New("ntgo: next directive appeared")
+	DifferentTypesOnTheSameLevelError = errors.New("ntgo: can not place different types of entities on the same level")
+	DictionaryKeyNestedQuotesError    = errors.New("ntgo: quoted dictionary key can not contain any quotes")
+	EmptyDataError                    = errors.New("ntgo: data can not be empty")
+	RootLevelHasIndentError           = errors.New("ntgo: root level must not be indented")
+	TabInIndentationError             = errors.New("ntgo: indent can not contain tab")
+	RootStringError                   = errors.New("ntgo: no string allowed on root level")
+	StringHasChildError               = errors.New("ntgo: string type can not have child")
+	TextHasChildError                 = errors.New("ntgo: text type can not have child")
+	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent leves")
+	StringWithNewLineError            = errors.New("ntgo: string type can not have line break")
+	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
 )
 
 type Directive struct {
