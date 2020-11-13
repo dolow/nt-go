@@ -16,22 +16,28 @@ const (
 	DirectiveTypeText       DirectiveType = iota
 	DirectiveTypeList       DirectiveType = iota
 	DirectiveTypeDictionary DirectiveType = iota
-
-	EmptyChar byte = 0x00
-	NotFoundIndex int = -1
 )
 
-var NextDirectiveAppearedError = errors.New("nestedtext: next directive appeared")
-var DifferentTypesOnTheSameLevelError = errors.New("nestedtext: can not place different types of entities on the same level")
-var DictionaryKeyNestedQuotesError = errors.New("nestedtext: quoted dictionary key can not contain any quotes")
-var EmptyDataError = errors.New("nestedtext: data can not be empty")
-var RootLevelHasIndentError = errors.New("nestedtext: root level must not be indented")
-var TabInIndentationError = errors.New("nestedtext: indent can not contain tab")
-var RootStringError = errors.New("nestedtext: no string allowed on root level")
-var StringHasChildError = errors.New("nestedtext: string type can not have child")
-var DifferentLevelOnSameChildError = errors.New("nestedtext: child elements have dirfferent leves")
-var StringWithNewLineError = errors.New("nestedtext: string type can not have line break")
-var DictionaryDuplicateKeyError = errors.New("nestedtext: dictionary type can not have the same key")
+const (
+	CommandNone         = iota
+	CommandEOF          = iota
+	CommandNewDirective = iota
+)
+
+var (
+	NextDirectiveAppearedError        = errors.New("nestedtext: next directive appeared")
+	DifferentTypesOnTheSameLevelError = errors.New("nestedtext: can not place different types of entities on the same level")
+	DictionaryKeyNestedQuotesError    = errors.New("nestedtext: quoted dictionary key can not contain any quotes")
+	EmptyDataError                    = errors.New("nestedtext: data can not be empty")
+	RootLevelHasIndentError           = errors.New("nestedtext: root level must not be indented")
+	TabInIndentationError             = errors.New("nestedtext: indent can not contain tab")
+	RootStringError                   = errors.New("nestedtext: no string allowed on root level")
+	StringHasChildError               = errors.New("nestedtext: string type can not have child")
+	TextHasChildError                 = errors.New("nestedtext: text type can not have child")
+	DifferentLevelOnSameChildError    = errors.New("nestedtext: child elements have dirfferent leves")
+	StringWithNewLineError            = errors.New("nestedtext: string type can not have line break")
+	DictionaryDuplicateKeyError       = errors.New("nestedtext: dictionary type can not have the same key")
+)
 
 type Directive struct {
 	Type DirectiveType
@@ -68,8 +74,8 @@ func (d *Directive) Unmarshal() string {
 	}
 	case DirectiveTypeList: {
 		for i := 0; i < len(d.List); i++ {
-			dataLn := "\n"
-			tailLn := "\n"
+			dataLn := string(LineBreak)
+			tailLn := string(LineBreak)
 			if i == len(d.List) - 1 {
 				tailLn = ""
 			}
@@ -85,8 +91,8 @@ func (d *Directive) Unmarshal() string {
 	case DirectiveTypeDictionary: {
 		it := 0
 		for k, v := range d.Dictionary {
-			dataLn := "\n"
-			tailLn := "\n"
+			dataLn := string(LineBreak)
+			tailLn := string(LineBreak)
 			if it == len(d.Dictionary) - 1 {
 				tailLn = ""
 			}
@@ -110,69 +116,64 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 	d.Type = DirectiveTypeUnknown
 
 	// remove trailing line breaks
-	for len(content) > 0 && content[len(content) - 1] == '\n' {
+	for len(content) > 0 && content[len(content) - 1] == LineBreak {
 		content = content[:len(content) - 1]
 	}
 
 	buffer := bytes.NewBuffer(content)
 
 	var line []byte
-	var index, lastIndex int
+	var index int
 	var readBytesErr error
+	command := CommandNone
 
 	ReadLineLoop: for {
-		eof := false
-
 		if readBytesErr != NextDirectiveAppearedError {
-			line, readBytesErr = buffer.ReadBytes(byte('\n'))
+			command = CommandNone
 
-			eof = (readBytesErr == io.EOF)
-			if !eof && readBytesErr != nil {
-				marshalErr = &DirectiveMarshalError{ error: readBytesErr }
+			var err error
+			line, err = buffer.ReadBytes(byte(LineBreak))
+
+			if err == io.EOF {
+				command = CommandEOF
+			} else if err != nil {
+				marshalErr = &DirectiveMarshalError{ error: err }
 				break
 			}
 		}
 
-		firstMeaningfulChar, newIndex := readFirstMeaningfulCharacter(line, true)
-		if firstMeaningfulChar == Tab {
+		chars, newIndex := readFirstMeaningfulTwoCharacters(line)
+
+		if chars[0] == Tab {
 			marshalErr = &DirectiveMarshalError{
 				error: TabInIndentationError,
 			}
 			break
 		}
 
-		if firstMeaningfulChar != CommentSymbol {
-			lastIndex = index
-			index = newIndex
+		if chars[0] == CommentSymbol {
+			continue
 		}
+
+		index = newIndex
 
 		directiveType := DirectiveTypeUnknown
 
-		switch firstMeaningfulChar {
+		switch chars[0] {
 		case EmptyChar:
 		case CommentSymbol:
 		case TextSymbol: {
-			if len(line) <= index + 1 {
+			if chars[1] == Space || chars[1] == LineBreak || chars[1] == EmptyChar {
 				directiveType = DirectiveTypeText
 			} else {
-				nextChar := line[index + 1]
-				if nextChar == ' ' || nextChar == '\n' {
-					directiveType = DirectiveTypeText
-				} else {
-					directiveType = DirectiveTypeString
-				}
+				directiveType = DirectiveTypeString
 			}
 		}
 		case ListSymbol: {
-			if len(line) <= index + 1 {
+			if chars[1] == Space || chars[1] == LineBreak || chars[1] == EmptyChar {
 				directiveType = DirectiveTypeList
 			} else {
-				nextChar := line[index + 1]
-				if nextChar == ' ' || nextChar == '\n' {
-					directiveType = DirectiveTypeList
-				} else {
-					directiveType = DirectiveTypeString
-				}
+				directiveType = DirectiveTypeString
 			}
 		}
 		default: directiveType = DirectiveTypeString
@@ -182,203 +183,44 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 		case DirectiveTypeUnknown:
 		case DirectiveTypeText:  // multi line text
 			{
-				if d.Type == DirectiveTypeText {
-					if index != lastIndex {
-						marshalErr = &DirectiveMarshalError{
-							error: DifferentLevelOnSameChildError,
-						}
-						break ReadLineLoop
-					}
-				} else if d.Type != DirectiveTypeUnknown {
-					marshalErr = &DirectiveMarshalError{
-						error: DifferentTypesOnTheSameLevelError,
-					}
-					break ReadLineLoop
-				}
-
-				d.Type = DirectiveTypeText
-
-				TextChildReadLineLoop: for {
-					char, newIndex := readFirstMeaningfulCharacter(line, false)
-					trailingBlankLine := false
-
-					if char != CommentSymbol && newIndex != NotFoundIndex {
-						if newIndex > index {
-							// deeper
-							marshalErr = &DirectiveMarshalError{
-								error: DifferentLevelOnSameChildError,
-							}
-							break TextChildReadLineLoop
-						} else if newIndex < index {
-							// shallower
-							readBytesErr = NextDirectiveAppearedError
-							break TextChildReadLineLoop
-						}
-
-						if char != TextSymbol {
-							marshalErr = &DirectiveMarshalError{
-								error: DifferentLevelOnSameChildError,
-							}
-							break TextChildReadLineLoop
-						}
-
-						if len(line) <= newIndex + 1 {
-							d.Text = append(d.Text, "")
-						} else {
-							if line[newIndex + 1] == LineBreak {
-								// text symbol with no space
-								d.Text = append(d.Text, "\n")
-							} else {
-								// after text symbol(>) and space
-								d.Text = append(d.Text, string(line[newIndex + 2:]))
-							}
-						}
-					} else {
-						trailingBlankLine = true
-					}
-
-					if readBytesErr != nil {
-						// if directive contains trailing blank line, last line of text directive may have trailing line break
-						if trailingBlankLine && len(d.Text) >= 1 {
-							lastLine := d.Text[len(d.Text) - 1]
-							if len(lastLine) >= 1 && lastLine[len(lastLine) - 1] == LineBreak {
-								d.Text[len(d.Text) - 1] = lastLine[:len(lastLine) - 1]
-							}
-						}
-
-						if readBytesErr == io.EOF {
-							break TextChildReadLineLoop
-						}
-						marshalErr = &DirectiveMarshalError{
-							error: readBytesErr,
-						}
-						break TextChildReadLineLoop
-					}
-
-					line, readBytesErr = buffer.ReadBytes(byte('\n'))
-				}
+				line, marshalErr = d.readTextDirective(index, line, buffer)
 			}
 		case DirectiveTypeList: // list
 			{
-				if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeList {
-					marshalErr = &DirectiveMarshalError{
-						error: DifferentTypesOnTheSameLevelError,
-					}
-					break ReadLineLoop
-				}
-
-				d.Type = DirectiveTypeList
-				elementContent := line[index+1:]
-
-				// detect string
-				elementContentChar, _ := readFirstMeaningfulCharacter(elementContent, true)
-				childIsString := elementContentChar != EmptyChar
-
-				firstLine := line
-
-				// TODO: almost same as dictionary
-				ListChildReadLineLoop: for {
-					line, readBytesErr = buffer.ReadBytes(byte('\n'))
-
-					childEof := (readBytesErr == io.EOF)
-					if !childEof && readBytesErr != nil {
-						marshalErr = &DirectiveMarshalError{
-							error: readBytesErr,
-						}
-						break ListChildReadLineLoop
-					}
-
-					char, nextIndex := readFirstMeaningfulCharacter(line, true)
-
-					if char == Tab {
-						marshalErr = &DirectiveMarshalError{
-							error: TabInIndentationError,
-						}
-						break ListChildReadLineLoop
-					}
-
-					if nextIndex == index {
-						// it is next element
+				if line, marshalErr = d.readListDirective(index, line, buffer); marshalErr != nil {
+					if marshalErr.error == NextDirectiveAppearedError {
+						command = CommandNewDirective
 						readBytesErr = NextDirectiveAppearedError
-						break ListChildReadLineLoop
+						marshalErr = nil
+					} else if marshalErr.error == io.EOF {
+						command = CommandEOF
+						marshalErr = nil
 					} else {
-						var err error
-
-						if childIsString && nextIndex != NotFoundIndex {
-							if nextIndex > index && line[nextIndex] != CommentSymbol {
-								err = StringHasChildError
-							} else if nextIndex < index {
-								err = DifferentLevelOnSameChildError
-							}
-						}
-						if err != nil {
-							marshalErr = &DirectiveMarshalError{
-								error: err,
-							}
-							break ReadLineLoop
-						}
-					}
-
-					elementContent = append(elementContent, line...)
-
-					if childEof {
-						break ListChildReadLineLoop
-					}
-				}
-
-				child := &Directive{
-					IndentSize: d.IndentSize,
-					Depth: d.Depth + 1,
-				}
-
-				if childIsString {
-					child.Type = DirectiveTypeString
-					if firstLine[len(firstLine) - 1] == '\n' {
-						child.String = string(firstLine[index + 2:len(firstLine) - 1])
-					} else {
-						child.String = string(firstLine[index + 2:])
-					}
-				} else {
-					// TODO: elementContent internally converted to bytes.Buufer, inpsect its performance cost
-					if marshalErr = child.Marshal(elementContent); marshalErr != nil {
-						if marshalErr.error == EmptyDataError {
-							child.Type = DirectiveTypeString
-							child.String = ""
-							marshalErr = nil
-						} else {
-							break ReadLineLoop
-						}
-					}
-				}
-
-				d.List = append(d.List, child)
-			}
-		default: // string or dictionary
-			{
-				dirtyKey, valueIndex := detectKeyBytes(line)
-				
-				if dirtyKey == nil && valueIndex == NotFoundIndex {
-					// string
-					if d.Type != DirectiveTypeUnknown {
-						marshalErr = &DirectiveMarshalError{
-							error: DifferentTypesOnTheSameLevelError,
-						}
 						break ReadLineLoop
 					}
-
-					if d.Depth == 0 {
-						marshalErr = &DirectiveMarshalError{
-							error: RootStringError,
-						}
-						break ReadLineLoop	
-					}
-
-					d.Type = DirectiveTypeString
-					// remove trailing line break
-					if line[len(line)-1] == '\n' {
-						d.String = string(line[index : len(line)-1])
+				}
+			}
+		default: // dictionary
+			{
+				if line, marshalErr = d.readDictionaryDirective(index, line, buffer); marshalErr != nil {
+					if marshalErr.error == NextDirectiveAppearedError {
+						command = CommandNewDirective
+						readBytesErr = NextDirectiveAppearedError
+						marshalErr = nil
+					} else if marshalErr.error == io.EOF {
+						command = CommandEOF
+						marshalErr = nil
 					} else {
-						d.String = string(line[index:])
+						break ReadLineLoop
+					}
+				}
+				/*
+				dirtyKey, valueIndex := detectKeyBytes(line)
+				
+				// unexpected string
+				if dirtyKey == nil && valueIndex == NotFoundIndex {
+					marshalErr = &DirectiveMarshalError{
+						error: RootStringError,
 					}
 					break ReadLineLoop
 				}
@@ -399,7 +241,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 				}
 
 				d.Type = DirectiveTypeDictionary
-				key, err := dictionaryKeySanitize(dirtyKey)
+				key, err := sanitizeDictionaryKey(dirtyKey)
 
 				if err != nil {
 					marshalErr = &DirectiveMarshalError{
@@ -417,7 +259,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 				var char byte
 				var nextIndex int
 				DictionaryChildReadLineLoop: for {
-					line, readBytesErr = buffer.ReadBytes(byte('\n'))
+					line, readBytesErr = buffer.ReadBytes(byte(LineBreak))
 
 					childEof := (readBytesErr == io.EOF)
 					if !childEof && readBytesErr != nil {
@@ -443,6 +285,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 								// TODO: irregular case
 							}
 							// it is next element
+							command = CommandNewDirective
 							readBytesErr = NextDirectiveAppearedError
 							break DictionaryChildReadLineLoop
 						}
@@ -503,7 +346,7 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 
 					if childIsString {
 						child.Type = DirectiveTypeString
-						if firstLine[len(firstLine) - 1] == '\n' {
+						if firstLine[len(firstLine) - 1] == LineBreak {
 							child.String = string(firstLine[valueIndex:len(firstLine) - 1])
 						} else {
 							child.String = string(firstLine[valueIndex:])
@@ -536,11 +379,11 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 					}
 					d.Dictionary[string(key)] = child
 				}
-
+				*/
 			}
 		}
 
-		if eof {
+		if command == CommandEOF {
 			break
 		}
 	}
@@ -554,117 +397,418 @@ func (d *Directive) Marshal(content []byte) *DirectiveMarshalError {
 	return marshalErr
 }
 
-func (d *Directive) ReadDictionaryDirective(contentBuffer *bytes.Buffer, elementContent *[]byte, indentationIndex int) *DirectiveMarshalError {
-	var marshalErr *DirectiveMarshalError = nil
+func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, *DirectiveMarshalError) {
+	if d.Type != DirectiveTypeUnknown {
+		return nil, &DirectiveMarshalError { error: DifferentTypesOnTheSameLevelError }
+	}
+
+	d.Type = DirectiveTypeText
+
+	var readErr error
+	currentLine := initialLine
 
 	for {
-		line, err := contentBuffer.ReadBytes(byte('\n'))
-
-		eof := (err == io.EOF)
-		if !eof && err != nil {
-			return &DirectiveMarshalError{
-				error: err,
+		char, newIndentSpaces := readFirstMeaningfulCharacter(currentLine, false)
+		
+		if char != CommentSymbol && char != LineBreak && newIndentSpaces != NotFoundIndex {
+			// validate
+			var err error
+			{
+				if newIndentSpaces > baseIndentSpaces {
+					// deeper
+					if char == TextSymbol {
+						err = DifferentLevelOnSameChildError
+					} else {
+						err = TextHasChildError
+					}
+				} else if newIndentSpaces < baseIndentSpaces {
+					// shallower
+					if char == TextSymbol {
+						err = DifferentLevelOnSameChildError
+					} else {
+						err = NextDirectiveAppearedError
+					}
+				} else if char != TextSymbol {
+					err = DifferentLevelOnSameChildError
+				}
 			}
+			if err != nil {
+				if err == NextDirectiveAppearedError {
+					if len(d.Text) >= 1 {
+						removeTrailingLineBreak(&d.Text[len(d.Text) - 1])
+					}
+					return currentLine, &DirectiveMarshalError { error: err }
+				}
+
+				return nil, &DirectiveMarshalError { error: err }
+			}
+
+			// append text
+			var appendText string
+			{
+				if len(currentLine) <= newIndentSpaces + 1 {
+					// text ends with symbol
+					appendText = ""
+				} else if currentLine[newIndentSpaces + 1] == LineBreak {
+					// text symbol with no space
+					appendText = string(LineBreak)
+				} else {
+					// after text symbol(>) and space
+					appendText = string(currentLine[newIndentSpaces + 2:])
+				}
+			}
+			d.Text = append(d.Text, appendText)
 		}
 
-		char, nextIndex := readFirstMeaningfulCharacter(line, true)
-
-		if char == Tab {
-			return &DirectiveMarshalError{
-				error: TabInIndentationError,
+		if readErr == io.EOF {
+			if len(d.Text) >= 1 {
+				removeTrailingLineBreak(&d.Text[len(d.Text) - 1])
 			}
+			return nil, nil
+		} else if readErr != nil {
+			return nil, &DirectiveMarshalError { error: readErr }
 		}
 
-		if nextIndex == indentationIndex {
-			if char == ListSymbol || char == TextSymbol {
-				// TODO: irregular case
-			}
-			// it is next element
-			return &DirectiveMarshalError{
-				error: NextDirectiveAppearedError,
-			}
+		currentLine, readErr = buffer.ReadBytes(byte(LineBreak))
+	}
+
+	return currentLine, nil
+}
+
+func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, *DirectiveMarshalError) {
+	if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeList {
+		return nil, &DirectiveMarshalError { error: DifferentTypesOnTheSameLevelError }
+	}
+
+	d.Type = DirectiveTypeList
+	elementContent := initialLine[baseIndentSpaces+1:]
+
+	// detect string
+	elementContentChar, _ := readFirstMeaningfulCharacter(elementContent, true)
+	
+	// string case
+	if elementContentChar != EmptyChar {
+		var nextLine []byte
+		var err error
+
+		if nextLine, err = buffer.ReadBytes(byte(LineBreak)); err != nil && err != io.EOF {
+			return nil, &DirectiveMarshalError{ error: err }
 		}
 
-		if nextIndex == NotFoundIndex {
-			*elementContent = append(*elementContent, line[0:]...)
+		child := &Directive{
+			Type: DirectiveTypeString,
+			IndentSize: d.IndentSize,
+			Depth: d.Depth + 1,
+		}
+
+		if initialLine[len(initialLine) - 1] == LineBreak {
+			child.String = string(initialLine[baseIndentSpaces + 2:len(initialLine) - 1])
 		} else {
-			*elementContent = append(*elementContent, line[nextIndex:]...)
+			child.String = string(initialLine[baseIndentSpaces + 2:])
 		}
 
-		if eof {
+		d.List = append(d.List, child)
+
+		char, newIndentSpaces := readFirstMeaningfulCharacter(nextLine, true)
+
+		// validate
+		if char == Tab {
+			err = TabInIndentationError
+		} else if newIndentSpaces != NotFoundIndex {
+			if newIndentSpaces == baseIndentSpaces {
+				err = NextDirectiveAppearedError
+			} else if newIndentSpaces > baseIndentSpaces {
+				err = StringHasChildError
+			} else if newIndentSpaces < baseIndentSpaces {
+				err = DifferentLevelOnSameChildError
+			}
+		}
+
+		return nextLine, &DirectiveMarshalError{ error: err }
+	}
+
+	var currentLine []byte
+	var err error
+
+	// collect child content lines
+	for err != io.EOF {
+		if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err != nil && err != io.EOF {
 			break
+		}
+
+		char, newIndentSpaces := readFirstMeaningfulCharacter(currentLine, true)
+
+		// validate
+		if char == Tab {
+			err = TabInIndentationError
+			break
+		}
+		if newIndentSpaces == baseIndentSpaces {
+			err = NextDirectiveAppearedError
+			break
+		}
+
+		elementContent = append(elementContent, currentLine...)
+	}
+
+	if err != nil && err != NextDirectiveAppearedError && err != io.EOF {
+		return nil, &DirectiveMarshalError{ error: err }
+	}
+
+	
+	child := &Directive{
+		IndentSize: d.IndentSize,
+		Depth: d.Depth + 1,
+	}
+
+	// marshal child
+	// TODO: elementContent internally converted to bytes.Buufer, inpsect its performance cost
+	if marshalErr := child.Marshal(elementContent); marshalErr != nil {
+		if marshalErr.error != EmptyDataError {
+			return nil, marshalErr
+		}
+		// treat empty data as empty string
+		child.Type = DirectiveTypeString
+		child.String = ""
+	}
+
+	d.List = append(d.List, child)
+
+	return currentLine, &DirectiveMarshalError{ error: err }
+}
+
+func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, *DirectiveMarshalError) {
+	var err error
+
+	// dictionary
+	if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeDictionary {
+		err = DifferentTypesOnTheSameLevelError
+	} else if d.Depth == 0 && baseIndentSpaces > 0 {
+		err = RootLevelHasIndentError
+	}
+
+	if err != nil {
+		return nil, &DirectiveMarshalError{ error: err }
+	}
+
+	key, valueIndex := detectKeyBytes(initialLine)
+				
+	// unexpected string
+	if key == nil && valueIndex == NotFoundIndex {
+		return nil, &DirectiveMarshalError{ error: RootStringError }
+	}
+
+	if err = sanitizeDictionaryKey(&key);err != nil {
+		return nil,  &DirectiveMarshalError{ error: err }
+	}
+	if d.Dictionary != nil {
+		if _, exists := d.Dictionary[string(key)]; exists {
+			err = DictionaryDuplicateKeyError
 		}
 	}
 
-	return marshalErr
-}
+	d.Type = DirectiveTypeDictionary
 
-func (d *Directive) ReadListDirective(contentBuffer *bytes.Buffer, elementContent *[]byte, indentationIndex int) *DirectiveMarshalError {
-	var marshalErr *DirectiveMarshalError = nil
+	currentLine := initialLine
+	elementContent := currentLine[valueIndex:]
 
-	for {
-		line, err := contentBuffer.ReadBytes(byte('\n'))
+	firstChar, _ := readFirstMeaningfulCharacter(elementContent, true)
+	
+	if firstChar != EmptyChar {
+		var char byte
+		var nextIndex int
+		
+		for err != io.EOF {
+			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err != nil && err != io.EOF {
+				break
+			}
 
-		eof := (err == io.EOF)
-		if !eof && err != nil {
-			return &DirectiveMarshalError{
-				error: err,
+			char, nextIndex = readFirstMeaningfulCharacter(currentLine, true)
+
+			if char == Tab {
+				err = TabInIndentationError
+				break
+			}
+
+			if nextIndex != NotFoundIndex {
+				// returned to same level
+				if nextIndex == baseIndentSpaces {
+					// it is next element
+					err = NextDirectiveAppearedError
+					break
+				}
+
+				if nextIndex > baseIndentSpaces && currentLine[nextIndex] != CommentSymbol {
+					// string has child
+					err = StringHasChildError
+					break
+				}
+
+				elementContent = append(elementContent, currentLine...)
 			}
 		}
 
-		char, nextIndex := readFirstMeaningfulCharacter(line, true)
+		if d.Dictionary != nil {
+			if _, exists := d.Dictionary[string(key)]; exists {
+				err = DictionaryDuplicateKeyError
+			}
+		}
+
+		if err != nil  && err != NextDirectiveAppearedError && err != io.EOF {
+			return nil, &DirectiveMarshalError{ error: err }
+		}
+
+		// char after line break
+		firstChar, _ = readFirstMeaningfulCharacter(elementContent, true)
+
+		if firstChar != EmptyChar {
+			child := &Directive{
+				IndentSize: d.IndentSize,
+				Depth: d.Depth + 1,
+			}
+
+			child.Type = DirectiveTypeString
+			if initialLine[len(initialLine) - 1] == LineBreak {
+				child.String = string(initialLine[valueIndex:len(initialLine) - 1])
+			} else {
+				child.String = string(initialLine[valueIndex:])
+			}
+
+			if d.Dictionary == nil {
+				d.Dictionary = make(map[string]*Directive)
+			}
+			
+			d.Dictionary[string(key)] = child
+		} else {
+			// empty case
+			child := &Directive{
+				Type: DirectiveTypeString,
+				String: "",
+			}
+			if d.Dictionary == nil {
+				d.Dictionary = make(map[string]*Directive)
+			}
+			d.Dictionary[string(key)] = child
+		}
+
+		return currentLine, &DirectiveMarshalError{ error: err }
+	}
+
+
+	var char byte
+	var nextIndex int
+	
+	for err != io.EOF {
+		if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err != nil && err != io.EOF {
+			break
+		}
+
+		char, nextIndex = readFirstMeaningfulCharacter(currentLine, true)
 
 		if char == Tab {
-			return &DirectiveMarshalError{
-				error: TabInIndentationError,
-			}
-		}
-
-		if nextIndex == indentationIndex {
-			if char != ListSymbol {
-				// TODO: irregular case
-			}
-			// it is next element
-			return &DirectiveMarshalError{
-				error: NextDirectiveAppearedError,
-			}
-		}
-
-		if nextIndex == NotFoundIndex {
-			*elementContent = append(*elementContent, line[0:]...)
-		} else {
-			*elementContent = append(*elementContent, line[nextIndex:]...)
-		}
-
-		if eof {
+			err = TabInIndentationError
 			break
+		}
+
+		if nextIndex != NotFoundIndex {
+			// returned to same level
+			if nextIndex == baseIndentSpaces {
+				// it is next element
+				err = NextDirectiveAppearedError
+				break
+			}
+
+			if char != EmptyChar && char != ListSymbol && char != TextSymbol && char != CommentSymbol {
+				_, valueIndex := detectKeyBytes(currentLine)
+				// sepIndex := getDictionarySeparatorIndex(line)
+				if valueIndex == NotFoundIndex {
+					// string has line break
+					err = StringWithNewLineError
+					break
+				}
+			}
+
+			elementContent = append(elementContent, currentLine...)
 		}
 	}
 
-	return marshalErr
+	if firstChar == Tab {
+		err = TabInIndentationError
+	} else if d.Dictionary != nil {
+		if _, exists := d.Dictionary[string(key)]; exists {
+			err = DictionaryDuplicateKeyError
+		}
+	}
+
+	if err != nil  && err != NextDirectiveAppearedError && err != io.EOF {
+		return nil, &DirectiveMarshalError{ error: err }
+	}
+
+	// char after line break
+	firstChar, _ = readFirstMeaningfulCharacter(elementContent, true)
+
+	if firstChar != EmptyChar {
+		child := &Directive{
+			IndentSize: d.IndentSize,
+			Depth: d.Depth + 1,
+		}
+
+		if marshalErr := child.Marshal(elementContent); marshalErr != nil {
+			if marshalErr.error == EmptyDataError {
+				child.Type = DirectiveTypeString
+				child.String = ""
+				marshalErr = nil
+			} else {
+				return nil, marshalErr
+			}
+		}
+
+		if d.Dictionary == nil {
+			d.Dictionary = make(map[string]*Directive)
+		}
+		
+		d.Dictionary[string(key)] = child
+	} else {
+		// empty case
+		child := &Directive{
+			Type: DirectiveTypeString,
+			String: "",
+		}
+		if d.Dictionary == nil {
+			d.Dictionary = make(map[string]*Directive)
+		}
+		d.Dictionary[string(key)] = child
+	}
+
+	return currentLine, &DirectiveMarshalError{ error: err }
 }
 
-func dictionaryKeySanitize(key []byte) ([]byte, error) {
-	sanitizedKey := key
+func removeTrailingLineBreak(s *string) {
+	l := len(*s)
+	if l - 1 >= 0 && (*s)[l - 1] == LineBreak {
+		*s = (*s)[:l - 1]
+	}
+}
 
+func sanitizeDictionaryKey(key *[]byte) error {
 	quoted := false
 
 	// remove sorrounding quotes
 	{
-		if len(sanitizedKey) >= 2 {
-			if (key[0] == '"' && key[len(key) - 1] == '"') || (key[0] == '\'' && key[len(key) - 1] == '\'') {
+		if len(*key) >= 2 {
+			if ((*key)[0] == '"' && (*key)[len(*key) - 1] == '"') || ((*key)[0] == '\'' && (*key)[len(*key) - 1] == '\'') {
 				quoted = true
-				sanitizedKey = key[1:len(key) - 1]
-				quotedKey := sanitizedKey
+				*key = (*key)[1:len(*key) - 1]
+				quotedKey := *key
 				// nested quote is allowed
-				if len(sanitizedKey) >= 2 {
-					if (sanitizedKey[0] == '"' && sanitizedKey[len(sanitizedKey) - 1] == '"') || (sanitizedKey[0] == '\'' && sanitizedKey[len(sanitizedKey) - 1] == '\'') {
-						quotedKey = sanitizedKey[1:len(sanitizedKey) - 1]
+				if len(*key) >= 2 {
+					if ((*key)[0] == '"' && (*key)[len(*key) - 1] == '"') || ((*key)[0] == '\'' && (*key)[len(*key) - 1] == '\'') {
+						quotedKey = (*key)[1:len(*key) - 1]
 					}
 				}
 				for _, b := range quotedKey {
 					if b == '"' || b ==  '\'' {
-						return nil, DictionaryKeyNestedQuotesError
+						return DictionaryKeyNestedQuotesError
 					}
 				}
 			}
@@ -673,11 +817,11 @@ func dictionaryKeySanitize(key []byte) ([]byte, error) {
 
 	// remove trailing space
 	if !quoted {
-		index := len(sanitizedKey) - 1
+		index := len(*key) - 1
 		trimSize := 0
 
 		for index >= 0 {
-			if unicode.IsSpace(rune(sanitizedKey[index])) {
+			if unicode.IsSpace(rune((*key)[index])) {
 				trimSize++
 			} else {
 				break
@@ -685,10 +829,30 @@ func dictionaryKeySanitize(key []byte) ([]byte, error) {
 			index--
 		}
 		
-		sanitizedKey = sanitizedKey[:len(sanitizedKey) - trimSize]
+		*key = (*key)[:len(*key) - trimSize]
 	}
 
-	return sanitizedKey, nil
+	return nil
+}
+
+func readFirstMeaningfulTwoCharacters(line []byte) ([]byte, int) {
+	var index int
+
+	for len(line) > index {
+		char := line[index]
+
+		if char != Space && char != LineBreak {
+			if index + 1 == len(line) {
+				return []byte{ char, EmptyChar }, index
+			}
+
+			return []byte{ char, line[index + 1] }, index
+		}
+
+		index++
+	}
+
+	return []byte{ EmptyChar, EmptyChar }, NotFoundIndex
 }
 
 func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
@@ -698,7 +862,6 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
 	for len(line) > index {
 		char = line[index]
 
-		//if !unicode.IsSpace(rune(char)) {
 		if char != Space {
 			if char == LineBreak {
 				if !skipLineBreak {
@@ -707,10 +870,6 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
 			} else {
 				return char, index
 			}
-		}
-
-		if char == Tab {
-			return char, index
 		}
 
 		index++

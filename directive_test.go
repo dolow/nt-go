@@ -1,6 +1,7 @@
 package nestedtext
 
 import (
+	"bytes"
 	"fmt"
 	"testing"
 
@@ -33,10 +34,10 @@ func TestMarshal(t *testing.T) {
 		t.Run("string start with space", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("  %s", expect))
 
-			t.Run("should cause RootStringError", func(t *testing.T) {
+			t.Run("should cause RootLevelHasIndentError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootLevelHasIndentError, err.error)
 			})
 		})
 
@@ -63,10 +64,10 @@ func TestMarshal(t *testing.T) {
 		t.Run("string start with line break and second line starts with spaces", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("\n  %s", expect))
 
-			t.Run("should cause RootStringError", func(t *testing.T) {
+			t.Run("should cause RootLevelHasIndentError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootLevelHasIndentError, err.error)
 			})
 		})
 
@@ -188,7 +189,6 @@ func TestMarshal(t *testing.T) {
 			})
 			t.Run("List should contain directives with DirectiveTypeString", func(t *testing.T) {
 				directive, err := subject()
-
 				assert.Nil(t, err)
 				assert.Equal(t, len(expect), len(directive.List))
 
@@ -692,4 +692,343 @@ func TestDetectKeyBytes(t *testing.T) {
 			assert.Equal(t, expect, key)
 		})
 	}
+}
+
+
+func TestReadTextDirective(t *testing.T) {
+
+	var directive *Directive
+
+	var index     int
+	var firstLine []byte
+	var buffer    *bytes.Buffer
+
+	var content []byte
+
+	var bufferInitializer func() *bytes.Buffer
+
+	prepare := func() {
+		directive = &Directive{}
+		bufferInitializer = func() *bytes.Buffer {
+			return bytes.NewBuffer(content)
+		}
+	}
+
+	condition := func() {}
+
+	subject := func() ([]byte, *DirectiveMarshalError) {
+		condition()
+		buffer = bufferInitializer()
+		return directive.readTextDirective(index, firstLine, buffer)
+	}
+
+	t.Run("when next directive appeared", func(t *testing.T) {
+		condition = func() {
+			index = 2
+			firstLine = []byte("  > first line\n")
+			content = []byte(
+`  > second line
+  > third line
+- list`)
+		}
+
+		t.Run("should return DirectiveMarshalError with NextDirectiveAppearedError", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Equal(t, NextDirectiveAppearedError, err.error)
+		})
+		t.Run("should return first line of next different directive", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Equal(t, []byte("- list"), nextLine)
+		})
+		t.Run("should Text slice ends with last line of text directive", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 3, len(directive.Text))
+			assert.Equal(t, "third line", directive.Text[2])
+		})
+	})
+
+	t.Run("when eof occured", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("> first line\n")
+			content = []byte("> second line\n> third line")
+		}
+
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should Text slice ends with last line", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 3, len(directive.Text))
+			assert.Equal(t, "third line", directive.Text[2])
+		})
+	})
+	t.Run("when text ends with text symbol(>)", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("> first line\n")
+			content = []byte(">")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add empty line to Text slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(directive.Text))
+			assert.Equal(t, "", directive.Text[1])
+		})
+	})
+	t.Run("when text contains blank line on the head", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("\n")
+			content = []byte("> first line\n> second line")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(directive.Text))
+			assert.Equal(t, "first line\n", directive.Text[0])
+			assert.Equal(t, "second line", directive.Text[1])
+		})
+	})
+	t.Run("when text contains blank line on the middle", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("> first line\n")
+			content = []byte("\n")
+			content = []byte("> second line")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(directive.Text))
+			assert.Equal(t, "first line\n", directive.Text[0])
+			assert.Equal(t, "second line", directive.Text[1])
+		})
+	})
+	t.Run("when text ends with blank line", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("> first line\n")
+			content = []byte("> second line\n")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(directive.Text))
+			assert.Equal(t, "first line\n", directive.Text[0])
+			assert.Equal(t, "second line", directive.Text[1])
+		})
+	})
+
+	t.Run("irregulars", func(t *testing.T) {
+		t.Run("when Type is already defined", func(t *testing.T) {
+			condition = func() {
+				index = 0
+				firstLine = []byte("> first line\n")
+				content = []byte("> second line")
+
+				directive.Type = DirectiveTypeText
+			}
+
+			t.Run("should return DirectiveMarshalError with DifferentTypesOnTheSameLevelError", func(t *testing.T) {
+				prepare()
+				_, err := subject()
+				assert.Equal(t, DifferentTypesOnTheSameLevelError, err.error)
+			})
+
+			t.Run("should return nil for nextLine", func(t *testing.T) {
+				prepare()
+				nextLine, _ := subject()
+				assert.Nil(t, nextLine)
+			})
+		})
+
+		t.Run("when content consists of lines with different indentations", func(t *testing.T) {
+
+			index = 2
+			firstLine = []byte("  > first line\n")
+
+			t.Run("when following line is deeper", func(t *testing.T) {
+				
+				contentPh := "    %s"
+				
+				t.Run("when following line is text", func(t *testing.T) {
+
+					condition = func() {
+						content = []byte(fmt.Sprintf(contentPh, "> text"))
+					}
+
+					t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+						prepare()
+						_, err := subject()
+						assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+					})
+
+					t.Run("should return nil for nextLine", func(t *testing.T) {
+						prepare()
+						nextLine, _ := subject()
+						assert.Nil(t, nextLine)
+					})
+				})
+
+				t.Run("when following line is not text", func(t *testing.T) {
+					condition = func() {
+						content = []byte(fmt.Sprintf(contentPh, "- list"))
+					}
+
+					t.Run("should return TextHasChildError with DifferentLevelOnSameChildError", func(t *testing.T) {
+						prepare()
+						_, err := subject()
+						assert.Equal(t, TextHasChildError, err.error)
+					})
+
+					t.Run("should return nil for nextLine", func(t *testing.T) {
+						prepare()
+						nextLine, _ := subject()
+						assert.Nil(t, nextLine)
+					})
+				})
+			})
+
+			t.Run("when following line is shallower", func(t *testing.T) {
+
+				contentPh := "%s"
+
+				t.Run("when following line is text", func(t *testing.T) {
+
+					condition = func() {
+						content = []byte(fmt.Sprintf(contentPh, "> text"))
+					}
+
+					t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+						prepare()
+						_, err := subject()
+						assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+					})
+
+					t.Run("should return nil for nextLine", func(t *testing.T) {
+						prepare()
+						nextLine, _ := subject()
+						assert.Nil(t, nextLine)
+					})
+				})
+
+				t.Run("when following line is not text", func(t *testing.T) {
+
+					condition = func() {
+						content = []byte(fmt.Sprintf(contentPh, "- list"))
+					}
+
+					t.Run("should return DirectiveMarshalError with NextDirectiveAppearedError", func(t *testing.T) {
+						prepare()
+						_, err := subject()
+						assert.Equal(t, NextDirectiveAppearedError, err.error)
+					})
+
+					t.Run("should return first line of next directive", func(t *testing.T) {
+						prepare()
+						nextLine, _ := subject()
+						assert.Equal(t, []byte("- list"), nextLine)
+					})
+				})
+			})
+		})
+
+		t.Run("when content consists of lines with different directives", func(t *testing.T) {
+			condition = func() {
+				firstLine = []byte("> first line\n")
+				content = []byte("- list")
+			}
+
+			t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+				prepare()
+				_, err := subject()
+				assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+			})
+
+			t.Run("should return nil for next line", func(t *testing.T) {
+				prepare()
+				nextLine, _ := subject()
+				assert.Nil(t, nextLine)
+			})
+		})
+	})
+}
+
+func TestRemoveTrailingLineBreak(t *testing.T) {
+	t.Run("should remove trailing line break", func(t *testing.T) {
+		str := "hello world\n"
+		removeTrailingLineBreak(&str)
+		assert.Equal(t, "hello world", str)
+	})
+
+	t.Run("should remove only single line break", func(t *testing.T) {
+		t.Run("consequent line breaks", func(t *testing.T) {
+			str := "hello world\n\n"
+			removeTrailingLineBreak(&str)
+			assert.Equal(t, "hello world\n", str)
+		})
+		t.Run("multilines", func(t *testing.T) {
+			str := "hello\nworld\n"
+			removeTrailingLineBreak(&str)
+			assert.Equal(t, "hello\nworld", str)
+		})
+	})
+
+	t.Run("should not remove character if last character is not a line break", func(t *testing.T) {
+		str := "hello world"
+		removeTrailingLineBreak(&str)
+		assert.Equal(t, "hello world", str)
+	})
 }
