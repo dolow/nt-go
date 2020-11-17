@@ -3,6 +3,7 @@ package ntgo
 import (
 	"bytes"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -649,6 +650,108 @@ func TestUnmarshal(t *testing.T) {
 	})
 }
 
+func TestDetectDirectiveType(t *testing.T) {
+	var data []byte
+	subject := func() (DirectiveType, int, error) {
+		return detectDirectiveType(data)
+	}
+
+	t.Run("when empty data given", func(t *testing.T) {
+		data = []byte("  ")
+
+		t.Run("should return DirectiveTypeUnknown", func(t *testing.T) {
+			typ, _, _ := subject()
+			assert.Equal(t, DirectiveTypeUnknown, typ)
+		})
+
+		t.Run("should return NotFoundIndex", func(t *testing.T) {
+			_, index, _ := subject()
+			assert.Equal(t, NotFoundIndex, index)
+		})
+
+		t.Run("should return nil Error", func(t *testing.T) {
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+	})
+
+	t.Run("when comment data given", func(t *testing.T) {
+		data = []byte("  # comment")
+
+		t.Run("should return DirectiveTypeComment", func(t *testing.T) {
+			typ, _, _ := subject()
+			assert.Equal(t, DirectiveTypeComment, typ)
+		})
+
+		t.Run("should return index of # symbol", func(t *testing.T) {
+			_, index, _ := subject()
+			assert.Equal(t, strings.Index(string(data), "#"), index)
+		})
+
+		t.Run("should return nil Error", func(t *testing.T) {
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+	})
+
+	t.Run("when meaningful data starts with tab", func(t *testing.T) {
+		data = []byte("  \t ")
+
+		t.Run("should return DirectiveTypeUnknown", func(t *testing.T) {
+			typ, _, _ := subject()
+			assert.Equal(t, DirectiveTypeUnknown, typ)
+		})
+
+		t.Run("should return index of tab", func(t *testing.T) {
+			_, index, _ := subject()
+			assert.Equal(t, strings.Index(string(data), "\t"), index)
+		})
+
+		t.Run("should return TabInIndentationError", func(t *testing.T) {
+			_, _, err := subject()
+			assert.Equal(t, TabInIndentationError, err)
+		})
+	})
+
+	t.Run("when text data given", func(t *testing.T) {
+		data = []byte("  > text")
+
+		t.Run("should return DirectiveTypeText", func(t *testing.T) {
+			typ, _, _ := subject()
+			assert.Equal(t, DirectiveTypeText, typ)
+		})
+
+		t.Run("should return index of > symbol", func(t *testing.T) {
+			_, index, _ := subject()
+			assert.Equal(t, strings.Index(string(data), ">"), index)
+		})
+
+		t.Run("should return nil error", func(t *testing.T) {
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+	})
+
+	t.Run("when list data given", func(t *testing.T) {
+		data = []byte("  - list")
+
+		t.Run("should return DirectiveTypeList", func(t *testing.T) {
+			typ, _, _ := subject()
+			assert.Equal(t, DirectiveTypeList, typ)
+		})
+
+		t.Run("should return index of - symbol", func(t *testing.T) {
+			_, index, _ := subject()
+			assert.Equal(t, strings.Index(string(data), "-"), index)
+		})
+
+		t.Run("should return nil error", func(t *testing.T) {
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+	})
+}
+
 func TestDetectKeyBytes(t *testing.T) {
 
 	cases := [][]string{
@@ -1005,29 +1108,56 @@ func TestReadTextDirective(t *testing.T) {
 	})
 }
 
-func TestRemoveTrailingLineBreak(t *testing.T) {
+func TestRemoveStringTrailingLineBreaks(t *testing.T) {
 	t.Run("should remove trailing line break", func(t *testing.T) {
 		str := "hello world\n"
-		removeTrailingLineBreak(&str)
+		removeStringTrailingLineBreaks(&str)
 		assert.Equal(t, "hello world", str)
 	})
 
 	t.Run("should remove only single line break", func(t *testing.T) {
 		t.Run("consequent line breaks", func(t *testing.T) {
 			str := "hello world\n\n"
-			removeTrailingLineBreak(&str)
+			removeStringTrailingLineBreaks(&str)
 			assert.Equal(t, "hello world\n", str)
 		})
 		t.Run("multilines", func(t *testing.T) {
 			str := "hello\nworld\n"
-			removeTrailingLineBreak(&str)
+			removeStringTrailingLineBreaks(&str)
 			assert.Equal(t, "hello\nworld", str)
 		})
 	})
 
 	t.Run("should not remove character if last character is not a line break", func(t *testing.T) {
 		str := "hello world"
-		removeTrailingLineBreak(&str)
+		removeStringTrailingLineBreaks(&str)
 		assert.Equal(t, "hello world", str)
+	})
+}
+
+func TestRemoveBytesTrailingLineBreaks(t *testing.T) {
+	t.Run("should remove trailing line break", func(t *testing.T) {
+		b := []byte("hello world\n")
+		removeBytesTrailingLineBreaks(&b)
+		assert.Equal(t, []byte("hello world"), b)
+	})
+
+	t.Run("should remove only single line break", func(t *testing.T) {
+		t.Run("consequent line breaks", func(t *testing.T) {
+			b := []byte("hello world\n\n")
+			removeBytesTrailingLineBreaks(&b)
+			assert.Equal(t, []byte("hello world\n"), b)
+		})
+		t.Run("multilines", func(t *testing.T) {
+			b := []byte("hello\nworld\n")
+			removeBytesTrailingLineBreaks(&b)
+			assert.Equal(t, []byte("hello\nworld"), b)
+		})
+	})
+
+	t.Run("should not remove character if last character is not a line break", func(t *testing.T) {
+		b := []byte("hello world")
+		removeBytesTrailingLineBreaks(&b)
+		assert.Equal(t, []byte("hello world"), b)
 	})
 }
