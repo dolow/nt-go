@@ -12,7 +12,7 @@ func TestMarshal(t *testing.T) {
 
 	var data []byte
 
-	subject := func() (*Directive, *DirectiveMarshalError) {
+	subject := func() (*Directive, error) {
 		directive := &Directive{}
 		err := directive.Marshal(data)
 		return directive, err
@@ -27,7 +27,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootStringError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootStringError, err)
 			})
 		})
 
@@ -37,7 +37,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootLevelHasIndentError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootLevelHasIndentError, err.error)
+				assert.Equal(t, RootLevelHasIndentError, err)
 			})
 		})
 
@@ -47,7 +47,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootStringError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootStringError, err)
 			})
 		})
 
@@ -57,7 +57,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootStringError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootStringError, err)
 			})
 		})
 
@@ -67,7 +67,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootLevelHasIndentError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootLevelHasIndentError, err.error)
+				assert.Equal(t, RootLevelHasIndentError, err)
 			})
 		})
 
@@ -78,7 +78,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootStringError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootStringError, err)
 			})
 		})
 
@@ -89,7 +89,7 @@ func TestMarshal(t *testing.T) {
 			t.Run("should cause RootStringError", func(t *testing.T) {
 				_, err := subject()
 				assert.NotNil(t, err)
-				assert.Equal(t, RootStringError, err.error)
+				assert.Equal(t, RootStringError, err)
 			})
 		})
 	})
@@ -713,7 +713,7 @@ func TestReadTextDirective(t *testing.T) {
 
 	condition := func() {}
 
-	subject := func() ([]byte, *DirectiveMarshalError) {
+	subject := func() ([]byte, error) {
 		condition()
 		buffer = bufferInitializer()
 		return directive.readTextDirective(index, firstLine, buffer)
@@ -729,10 +729,10 @@ func TestReadTextDirective(t *testing.T) {
 - list`)
 		}
 
-		t.Run("should return DirectiveMarshalError with NextDirectiveAppearedError", func(t *testing.T) {
+		t.Run("should return NextDirectiveAppearedError", func(t *testing.T) {
 			prepare()
 			_, err := subject()
-			assert.Equal(t, NextDirectiveAppearedError, err.error)
+			assert.Equal(t, NextDirectiveAppearedError, err)
 		})
 		t.Run("should return first line of next different directive", func(t *testing.T) {
 			prepare()
@@ -878,10 +878,10 @@ func TestReadTextDirective(t *testing.T) {
 				directive.Type = DirectiveTypeText
 			}
 
-			t.Run("should return DirectiveMarshalError with DifferentTypesOnTheSameLevelError", func(t *testing.T) {
+			t.Run("should return DifferentTypesOnTheSameLevelError", func(t *testing.T) {
 				prepare()
 				_, err := subject()
-				assert.Equal(t, DifferentTypesOnTheSameLevelError, err.error)
+				assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 			})
 
 			t.Run("should return nil for nextLine", func(t *testing.T) {
@@ -906,10 +906,10 @@ func TestReadTextDirective(t *testing.T) {
 						content = []byte(fmt.Sprintf(contentPh, "> text"))
 					}
 
-					t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+					t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
 						_, err := subject()
-						assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+						assert.Equal(t, DifferentLevelOnSameChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
@@ -927,7 +927,7 @@ func TestReadTextDirective(t *testing.T) {
 					t.Run("should return TextHasChildError with DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
 						_, err := subject()
-						assert.Equal(t, TextHasChildError, err.error)
+						assert.Equal(t, TextHasChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
@@ -948,10 +948,10 @@ func TestReadTextDirective(t *testing.T) {
 						content = []byte(fmt.Sprintf(contentPh, "> text"))
 					}
 
-					t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+					t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
 						_, err := subject()
-						assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+						assert.Equal(t, DifferentLevelOnSameChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
@@ -967,10 +967,10 @@ func TestReadTextDirective(t *testing.T) {
 						content = []byte(fmt.Sprintf(contentPh, "- list"))
 					}
 
-					t.Run("should return DirectiveMarshalError with NextDirectiveAppearedError", func(t *testing.T) {
+					t.Run("should return NextDirectiveAppearedError", func(t *testing.T) {
 						prepare()
 						_, err := subject()
-						assert.Equal(t, NextDirectiveAppearedError, err.error)
+						assert.Equal(t, NextDirectiveAppearedError, err)
 					})
 
 					t.Run("should return first line of next directive", func(t *testing.T) {
@@ -988,10 +988,10 @@ func TestReadTextDirective(t *testing.T) {
 				content = []byte("- list")
 			}
 
-			t.Run("should return DirectiveMarshalError with DifferentLevelOnSameChildError", func(t *testing.T) {
+			t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 				prepare()
 				_, err := subject()
-				assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+				assert.Equal(t, DifferentLevelOnSameChildError, err)
 			})
 
 			t.Run("should return nil for next line", func(t *testing.T) {

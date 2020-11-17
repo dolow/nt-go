@@ -114,7 +114,7 @@ func TestString(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, StringWithNewLineError, err.error)
+		assert.Equal(t, StringWithNewLineError, err)
 
 	})
 }
@@ -196,7 +196,7 @@ func TestText(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 
 	t.Run("text_6", func(t *testing.T) {
@@ -208,7 +208,7 @@ func TestText(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 
 	t.Run("text_7", func(t *testing.T) {
@@ -423,7 +423,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentTypesOnTheSameLevelError, err.error)
+		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 
 	t.Run("list_5", func(t *testing.T) {
@@ -435,7 +435,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 
 	t.Run("list_6", func(t *testing.T) {
@@ -447,7 +447,7 @@ func TestList(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, StringHasChildError, err.error)
+		assert.Equal(t, StringHasChildError, err)
 	})
 
 	t.Run("list_7", func(t *testing.T) {
@@ -542,35 +542,35 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal([]byte("key\n: value"))
 		assert.NotNil(t, err)
 		// DifferentTypesOnTheSameLevelError
-		assert.Equal(t, RootStringError, err.error)
+		assert.Equal(t, RootStringError, err)
 	})
 
 	t.Run("dict_03", func(t *testing.T) {
 		directive := &Directive{}
 
-		var err *DirectiveMarshalError
+		var err error
 
 		err = directive.Marshal([]byte("'ke'y': value"))
 		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err.error)
+		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 
 		err = directive.Marshal([]byte("'ke\"y': value"))
 		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err.error)
+		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 	})
 
 	t.Run("dict_04", func(t *testing.T) {
 		directive := &Directive{}
 
-		var err *DirectiveMarshalError
+		var err error
 
 		err = directive.Marshal([]byte("\"ke\"y\": value"))
 		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err.error)
+		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 
 		err = directive.Marshal([]byte("\"ke'y\": value"))
 		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err.error)
+		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 	})
 	t.Run("dict_05", func(t *testing.T) {
 		// empty json root object should cause error
@@ -583,7 +583,7 @@ func TestDictionary(t *testing.T) {
 
 		err := directive.Marshal(dat)
 		assert.NotNil(t, err)
-		assert.Equal(t, RootLevelHasIndentError, err.error)
+		assert.Equal(t, RootLevelHasIndentError, err)
 	})
 	t.Run("dict_07", func(t *testing.T) {
 		// causes error when the dictionary elements has different indentation
@@ -595,7 +595,7 @@ func TestDictionary(t *testing.T) {
 
 		assert.NotNil(t, err)
 		// TODO: identify invalid indentation
-		assert.Equal(t, StringHasChildError, err.error)
+		assert.Equal(t, StringHasChildError, err)
 	})
 	t.Run("dict_08", func(t *testing.T) {
 		// causes error when the indentation contains tab
@@ -606,7 +606,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, TabInIndentationError, err.error)
+		assert.Equal(t, TabInIndentationError, err)
 	})
 	t.Run("dict_09", func(t *testing.T) {
 		// differencing types on the same level
@@ -617,7 +617,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentTypesOnTheSameLevelError, err.error)
+		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 	t.Run("dict_10", func(t *testing.T) {
 		// list elements with different indentation causes error, case of following element is deeper
@@ -628,7 +628,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, StringHasChildError, err.error)
+		assert.Equal(t, StringHasChildError, err)
 	})
 	t.Run("dict_11", func(t *testing.T) {
 		// list elements with different indentation causes error, case of following element is shallower
@@ -639,7 +639,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentLevelOnSameChildError, err.error)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 	t.Run("dict_12", func(t *testing.T) {
 		// differing types at same level of indentation causes error
@@ -650,7 +650,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DifferentTypesOnTheSameLevelError, err.error)
+		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 	t.Run("dict_13", func(t *testing.T) {
 		// string elements starts with new line causes error
@@ -661,7 +661,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, StringWithNewLineError, err.error)
+		assert.Equal(t, StringWithNewLineError, err)
 	})
 	t.Run("dict_14", func(t *testing.T) {
 		// dictionary elements with same key causes error
@@ -672,7 +672,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryDuplicateKeyError, err.error)
+		assert.Equal(t, DictionaryDuplicateKeyError, err)
 	})
 	t.Run("dict_15", func(t *testing.T) {
 		// causes error when the dictionary text elements has tab indentation
@@ -683,7 +683,7 @@ func TestDictionary(t *testing.T) {
 		err := directive.Marshal(dat)
 
 		assert.NotNil(t, err)
-		assert.Equal(t, TabInIndentationError, err.error)
+		assert.Equal(t, TabInIndentationError, err)
 	})
 	t.Run("dict_16", func(t *testing.T) {
 		// key can contain ":"
@@ -847,16 +847,16 @@ func TestEmpty(t *testing.T) {
 
 		directive := &Directive{}
 
-		var err *DirectiveMarshalError
+		var err error
 
 		err = directive.Marshal(dat)
 		assert.NotNil(t, err)
 		// TODO: should be parsed and treat as null/nil by converter
-		assert.Equal(t, EmptyDataError, err.error)
+		assert.Equal(t, EmptyDataError, err)
 
 		err = directive.Marshal([]byte("\n  \n"))
 		assert.NotNil(t, err)
-		assert.Equal(t, EmptyDataError, err.error)
+		assert.Equal(t, EmptyDataError, err)
 	})
 }
 
