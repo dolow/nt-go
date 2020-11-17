@@ -132,9 +132,12 @@ func (d *Directive) Marshal(content []byte) (err error) {
 				loadedNextLine = false
 				err = nil
 			}
-		case DirectiveTypeText: currentLine, loadedNextLine, err = d.readTextDirective(index, currentLine, buffer)
-		case DirectiveTypeList: currentLine, loadedNextLine, err = d.readListDirective(index, currentLine, buffer)
-		default:                currentLine, loadedNextLine, err = d.readDictionaryDirective(index, currentLine, buffer)
+		case DirectiveTypeText:
+			currentLine, loadedNextLine, err = d.readTextDirective(index, currentLine, buffer)
+		case DirectiveTypeList:
+			currentLine, loadedNextLine, err = d.readListDirective(index, currentLine, buffer)
+		default:
+			currentLine, loadedNextLine, err = d.readDictionaryDirective(index, currentLine, buffer)
 		}
 
 		if err != nil {
