@@ -713,7 +713,7 @@ func TestReadTextDirective(t *testing.T) {
 
 	condition := func() {}
 
-	subject := func() ([]byte, error) {
+	subject := func() ([]byte, bool, error) {
 		condition()
 		buffer = bufferInitializer()
 		return directive.readTextDirective(index, firstLine, buffer)
@@ -731,12 +731,13 @@ func TestReadTextDirective(t *testing.T) {
 
 		t.Run("should return NextDirectiveAppearedError", func(t *testing.T) {
 			prepare()
-			_, err := subject()
-			assert.Equal(t, NextDirectiveAppearedError, err)
+			_, hasNext, err := subject()
+			assert.True(t, hasNext)
+			assert.Nil(t, err)
 		})
 		t.Run("should return first line of next different directive", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Equal(t, []byte("- list"), nextLine)
 		})
 		t.Run("should Text slice ends with last line of text directive", func(t *testing.T) {
@@ -756,12 +757,12 @@ func TestReadTextDirective(t *testing.T) {
 
 		t.Run("should return nil for error", func(t *testing.T) {
 			prepare()
-			_, err := subject()
+			_, _, err := subject()
 			assert.Nil(t, err)
 		})
 		t.Run("should return nil for next line", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Nil(t, nextLine)
 		})
 		t.Run("should Text slice ends with last line", func(t *testing.T) {
@@ -779,12 +780,12 @@ func TestReadTextDirective(t *testing.T) {
 		}
 		t.Run("should return nil for error", func(t *testing.T) {
 			prepare()
-			_, err := subject()
+			_, _, err := subject()
 			assert.Nil(t, err)
 		})
 		t.Run("should return nil for next line", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Nil(t, nextLine)
 		})
 		t.Run("should add empty line to Text slice", func(t *testing.T) {
@@ -802,12 +803,12 @@ func TestReadTextDirective(t *testing.T) {
 		}
 		t.Run("should return nil for error", func(t *testing.T) {
 			prepare()
-			_, err := subject()
+			_, _, err := subject()
 			assert.Nil(t, err)
 		})
 		t.Run("should return nil for next line", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Nil(t, nextLine)
 		})
 		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
@@ -827,12 +828,12 @@ func TestReadTextDirective(t *testing.T) {
 		}
 		t.Run("should return nil for error", func(t *testing.T) {
 			prepare()
-			_, err := subject()
+			_, _, err := subject()
 			assert.Nil(t, err)
 		})
 		t.Run("should return nil for next line", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Nil(t, nextLine)
 		})
 		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
@@ -851,12 +852,12 @@ func TestReadTextDirective(t *testing.T) {
 		}
 		t.Run("should return nil for error", func(t *testing.T) {
 			prepare()
-			_, err := subject()
+			_, _, err := subject()
 			assert.Nil(t, err)
 		})
 		t.Run("should return nil for next line", func(t *testing.T) {
 			prepare()
-			nextLine, _ := subject()
+			nextLine, _, _ := subject()
 			assert.Nil(t, nextLine)
 		})
 		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
@@ -880,13 +881,13 @@ func TestReadTextDirective(t *testing.T) {
 
 			t.Run("should return DifferentTypesOnTheSameLevelError", func(t *testing.T) {
 				prepare()
-				_, err := subject()
+				_, _, err := subject()
 				assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 			})
 
 			t.Run("should return nil for nextLine", func(t *testing.T) {
 				prepare()
-				nextLine, _ := subject()
+				nextLine, _, _ := subject()
 				assert.Nil(t, nextLine)
 			})
 		})
@@ -908,13 +909,13 @@ func TestReadTextDirective(t *testing.T) {
 
 					t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
-						_, err := subject()
+						_, _, err := subject()
 						assert.Equal(t, DifferentLevelOnSameChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
 						prepare()
-						nextLine, _ := subject()
+						nextLine, _, _ := subject()
 						assert.Nil(t, nextLine)
 					})
 				})
@@ -926,13 +927,13 @@ func TestReadTextDirective(t *testing.T) {
 
 					t.Run("should return TextHasChildError with DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
-						_, err := subject()
+						_, _, err := subject()
 						assert.Equal(t, TextHasChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
 						prepare()
-						nextLine, _ := subject()
+						nextLine, _, _ := subject()
 						assert.Nil(t, nextLine)
 					})
 				})
@@ -950,13 +951,13 @@ func TestReadTextDirective(t *testing.T) {
 
 					t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 						prepare()
-						_, err := subject()
+						_, _, err := subject()
 						assert.Equal(t, DifferentLevelOnSameChildError, err)
 					})
 
 					t.Run("should return nil for nextLine", func(t *testing.T) {
 						prepare()
-						nextLine, _ := subject()
+						nextLine, _, _ := subject()
 						assert.Nil(t, nextLine)
 					})
 				})
@@ -969,13 +970,14 @@ func TestReadTextDirective(t *testing.T) {
 
 					t.Run("should return NextDirectiveAppearedError", func(t *testing.T) {
 						prepare()
-						_, err := subject()
-						assert.Equal(t, NextDirectiveAppearedError, err)
+						_, hasNext, err := subject()
+						assert.True(t, hasNext)
+						assert.Nil(t, err)
 					})
 
 					t.Run("should return first line of next directive", func(t *testing.T) {
 						prepare()
-						nextLine, _ := subject()
+						nextLine, _, _ := subject()
 						assert.Equal(t, []byte("- list"), nextLine)
 					})
 				})
@@ -990,13 +992,13 @@ func TestReadTextDirective(t *testing.T) {
 
 			t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
 				prepare()
-				_, err := subject()
+				_, _, err := subject()
 				assert.Equal(t, DifferentLevelOnSameChildError, err)
 			})
 
 			t.Run("should return nil for next line", func(t *testing.T) {
 				prepare()
-				nextLine, _ := subject()
+				nextLine, _, _ := subject()
 				assert.Nil(t, nextLine)
 			})
 		})
