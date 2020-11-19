@@ -7,53 +7,53 @@ import (
 func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	// type of slice element
 	switch typ.Kind() {
-		case reflect.String:
-			{
-				// multiline text
-				work := *ref
-				if directive.Type == DirectiveTypeText {
-					for _, line := range directive.Text {
-						work = reflect.Append(work, reflect.ValueOf(line))
-					}
-				} else if directive.Type == DirectiveTypeList {
-					for _, child := range directive.List {
-						work = reflect.Append(work, reflect.ValueOf(child.String))
-					}
+	case reflect.String:
+		{
+			// multiline text
+			work := *ref
+			if directive.Type == DirectiveTypeText {
+				for _, line := range directive.Text {
+					work = reflect.Append(work, reflect.ValueOf(line))
 				}
-				ref.Set(work)
-			}
-		case reflect.Slice:
-			{
-				work := *ref
+			} else if directive.Type == DirectiveTypeList {
 				for _, child := range directive.List {
-					elementInstance := reflect.New(typ).Elem()
-					marshalSlice(child, typ.Elem(), &elementInstance)
-					work = reflect.Append(work, elementInstance)
+					work = reflect.Append(work, reflect.ValueOf(child.String))
 				}
-				ref.Set(work)
 			}
-		case reflect.Struct:
-			{
-				work := *ref
-				for _, child := range directive.List {
-					elementInstance := reflect.New(typ).Elem()
-					marshal(child, typ, &elementInstance)
-					work = reflect.Append(work, elementInstance)
-				}
-				ref.Set(work)
-				
+			ref.Set(work)
+		}
+	case reflect.Slice:
+		{
+			work := *ref
+			for _, child := range directive.List {
+				elementInstance := reflect.New(typ).Elem()
+				marshalSlice(child, typ.Elem(), &elementInstance)
+				work = reflect.Append(work, elementInstance)
 			}
-		case reflect.Ptr:
-			{
-				work := *ref
-				for _, child := range directive.List {
-					elementType := typ.Elem()
-					elementInstance := reflect.New(elementType)
-					marshal(child, elementType, &elementInstance)
-					work = reflect.Append(work, elementInstance)
-				}
-				ref.Set(work)
+			ref.Set(work)
+		}
+	case reflect.Struct:
+		{
+			work := *ref
+			for _, child := range directive.List {
+				elementInstance := reflect.New(typ).Elem()
+				marshal(child, typ, &elementInstance)
+				work = reflect.Append(work, elementInstance)
 			}
+			ref.Set(work)
+
+		}
+	case reflect.Ptr:
+		{
+			work := *ref
+			for _, child := range directive.List {
+				elementType := typ.Elem()
+				elementInstance := reflect.New(elementType)
+				marshal(child, elementType, &elementInstance)
+				work = reflect.Append(work, elementInstance)
+			}
+			ref.Set(work)
+		}
 	}
 }
 
