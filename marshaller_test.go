@@ -99,9 +99,8 @@ type SampleStruct struct {
 func TestMarshal(t *testing.T) {
 
 	subject := func() *SampleStruct {
-		m := &Marshaller{}
 		s := &SampleStruct{}
-		m.Marshal(Sample, s)
+		Marshal(Sample, s)
 		return s
 	}
 
