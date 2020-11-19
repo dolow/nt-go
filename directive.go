@@ -46,7 +46,7 @@ type Directive struct {
 	Depth      int
 
 	threads   chan int
-	errorChan chan error
+	resultChan chan error
 }
 
 func (d *Directive) Unmarshal() string {
@@ -116,24 +116,14 @@ func (d *Directive) Marshal(content []byte) (err error) {
 	loadedNextLine := false
 
 	d.threads = make(chan int)
-	d.errorChan = make(chan error)
-	joined := make(chan error)
+	d.resultChan = make(chan error)
 	concurrency := 0
 
 	go func() {
 		for addition := range d.threads {
 			concurrency += addition
 			if concurrency == 0 {
-				joined <- nil
-				break
-			}
-		}
-	}()
-
-	go func() {
-		for err := range d.errorChan {
-			if err != nil {
-				joined <- err
+				d.resultChan <- nil
 				break
 			}
 		}
@@ -181,7 +171,7 @@ func (d *Directive) Marshal(content []byte) (err error) {
 		if d.Type == DirectiveTypeUnknown {
 			err = EmptyDataError
 		} else {
-			err = <-joined
+			err = <-d.resultChan
 		}
 	}
 
@@ -412,7 +402,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 				child.Type = DirectiveTypeString
 				child.String = ""
 			} else if err != nil {
-				d.errorChan <- err
+				d.resultChan <- err
 				return
 			}
 
@@ -569,7 +559,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 					child.Type = DirectiveTypeString
 					child.String = ""
 				} else if err != nil {
-					d.errorChan <- err
+					d.resultChan <- err
 					return
 				}
 
