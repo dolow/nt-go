@@ -7,7 +7,7 @@ It covers [official teste cases](https://github.com/KenKundert/nestedtext_tests/
 
 # Usage
 
-## Parsing
+## Parsing schema unknown content
 
 Example for parsing and accessing nested text data below;
 
@@ -42,7 +42,7 @@ func main() {
 	content = someHowGetContent()
 
         directive := &ntgo.Directive{}
-        directive.Marshal(content)
+        directive.Parse(content)
 
 	// accessing root level type
 	// type is described as iota
@@ -70,10 +70,46 @@ func main() {
 ```
 
 
-## Stringify
+## Stringify schema unknown content
 
-Just send `Unmarshal` to directive instance that has already marshalized.
+Just send `ToString` to directive instance that has already marshalized.
 
 ```
-directive.Unmarshal()
+directive.ToString()
+```
+
+
+## Marshalling schema know content
+
+Define struct with nt tag(s) according to NestedText document schema.
+
+```
+name: smith
+profile:
+  address:
+    > Japan, Tokyo
+    > Suginami
+  favorite: Natto
+```
+
+```
+type Profile struct {
+  Address  MultiLineText `nt:"address"`
+  Favorite string        `nt:"favorite"`
+}
+type Person struct {
+  Name    string   `nt:"name"`
+  Profile *Profile `nt:"profile"`
+}
+```
+
+Then use `Marshal` function.
+
+```
+p := &Person{}
+ntgo.Marshal(content, p)
+fmt.Println(p.Name)               // "smith"
+fmt.Println(p.Profile.Address[0]) // "Japan, Tokyo\n"
+fmt.Println(p.Profile.Address[1]) // "Suginami"
+fmt.Println(p.Profile.Favorite)   // "Natto"
 ```
