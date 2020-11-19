@@ -46,7 +46,7 @@ type Directive struct {
 	Depth      int
 }
 
-func (d *Directive) Unmarshal() string {
+func (d *Directive) ToString() string {
 	str := ""
 
 	baseIndent := fmt.Sprintf("%*s", d.IndentSize*d.Depth, "")
@@ -75,7 +75,7 @@ func (d *Directive) Unmarshal() string {
 					dataLn = ""
 				}
 
-				str = fmt.Sprintf("%s%s- %s%s%s", str, baseIndent, dataLn, child.Unmarshal(), tailLn)
+				str = fmt.Sprintf("%s%s- %s%s%s", str, baseIndent, dataLn, child.ToString(), tailLn)
 			}
 		}
 	case DirectiveTypeDictionary:
@@ -92,7 +92,7 @@ func (d *Directive) Unmarshal() string {
 					dataLn = ""
 				}
 
-				str = fmt.Sprintf("%s%s%s: %s%s%s", str, baseIndent, k, dataLn, v.Unmarshal(), tailLn)
+				str = fmt.Sprintf("%s%s%s: %s%s%s", str, baseIndent, k, dataLn, v.ToString(), tailLn)
 
 				it++
 			}
@@ -102,7 +102,7 @@ func (d *Directive) Unmarshal() string {
 	return str
 }
 
-func (d *Directive) Marshal(content []byte) (err error) {
+func (d *Directive) Parse(content []byte) (err error) {
 	d.Type = DirectiveTypeUnknown
 
 	removeBytesTrailingLineBreaks(&content)
@@ -368,9 +368,9 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 			Depth:      d.Depth + 1,
 		}
 
-		// marshal child
+		// Parse child
 		// TODO: elementContent internally converted to bytes.Buffer, inpsect its performance cost
-		if err := child.Marshal(elementContent); err != nil {
+		if err := child.Parse(elementContent); err != nil {
 			if err != EmptyDataError {
 				return nil, hasNext, err
 			}
@@ -522,7 +522,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		} else {
 			child.IndentSize = d.IndentSize
 
-			if err = child.Marshal(elementContent); err == EmptyDataError {
+			if err = child.Parse(elementContent); err == EmptyDataError {
 				child.Type = DirectiveTypeString
 				child.String = ""
 			} else if err != nil {

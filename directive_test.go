@@ -9,13 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestMarshal(t *testing.T) {
+func TestParse(t *testing.T) {
 
 	var data []byte
 
 	subject := func() (*Directive, error) {
 		directive := &Directive{}
-		err := directive.Marshal(data)
+		err := directive.Parse(data)
 		return directive, err
 	}
 
@@ -515,7 +515,7 @@ func TestMarshal(t *testing.T) {
 	})
 }
 
-func TestUnmarshal(t *testing.T) {
+func TestToString(t *testing.T) {
 
 	var data []byte
 	var indentSize int
@@ -533,8 +533,8 @@ func TestUnmarshal(t *testing.T) {
 			IndentSize: indentSize,
 			Depth:      depth,
 		}
-		directive.Marshal(data)
-		return directive.Unmarshal()
+		directive.Parse(data)
+		return directive.ToString()
 	}
 
 	t.Run("text", func(t *testing.T) {

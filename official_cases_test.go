@@ -27,7 +27,7 @@ func TestString(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -45,7 +45,7 @@ func TestString(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -63,7 +63,7 @@ func TestString(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -81,7 +81,7 @@ func TestString(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -111,7 +111,7 @@ func TestString(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, StringWithNewLineError, err)
@@ -126,7 +126,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeText, directive.Type)
@@ -142,7 +142,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeText, directive.Type)
@@ -158,7 +158,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -175,7 +175,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -193,7 +193,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
@@ -205,7 +205,7 @@ func TestText(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
@@ -215,7 +215,7 @@ func TestText(t *testing.T) {
 		// complex cases
 		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_7/load_in.nt")
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
@@ -368,7 +368,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 
@@ -386,7 +386,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 
@@ -420,7 +420,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
@@ -432,7 +432,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
@@ -444,7 +444,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, StringHasChildError, err)
@@ -456,7 +456,7 @@ func TestList(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 
@@ -525,7 +525,7 @@ func TestDictionary(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/dict_01/load_in.nt")
 
 		directive := &Directive{}
-		directive.Marshal(dat)
+		directive.Parse(dat)
 		assert.Equal(t, len(expect.Dictionary), len(directive.Dictionary))
 		it := 0
 		for k, v := range expect.Dictionary {
@@ -539,7 +539,7 @@ func TestDictionary(t *testing.T) {
 	t.Run("dict_02", func(t *testing.T) {
 		directive := &Directive{}
 
-		err := directive.Marshal([]byte("key\n: value"))
+		err := directive.Parse([]byte("key\n: value"))
 		assert.NotNil(t, err)
 		// DifferentTypesOnTheSameLevelError
 		assert.Equal(t, RootStringError, err)
@@ -550,11 +550,11 @@ func TestDictionary(t *testing.T) {
 
 		var err error
 
-		err = directive.Marshal([]byte("'ke'y': value"))
+		err = directive.Parse([]byte("'ke'y': value"))
 		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 
-		err = directive.Marshal([]byte("'ke\"y': value"))
+		err = directive.Parse([]byte("'ke\"y': value"))
 		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 	})
@@ -564,11 +564,11 @@ func TestDictionary(t *testing.T) {
 
 		var err error
 
-		err = directive.Marshal([]byte("\"ke\"y\": value"))
+		err = directive.Parse([]byte("\"ke\"y\": value"))
 		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 
-		err = directive.Marshal([]byte("\"ke'y\": value"))
+		err = directive.Parse([]byte("\"ke'y\": value"))
 		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
 	})
@@ -581,7 +581,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 		assert.NotNil(t, err)
 		assert.Equal(t, RootLevelHasIndentError, err)
 	})
@@ -591,7 +591,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		// TODO: identify invalid indentation
@@ -603,7 +603,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, TabInIndentationError, err)
@@ -614,7 +614,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
@@ -625,7 +625,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, StringHasChildError, err)
@@ -636,7 +636,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
@@ -647,7 +647,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
@@ -658,7 +658,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, StringWithNewLineError, err)
@@ -669,7 +669,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryDuplicateKeyError, err)
@@ -680,7 +680,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.NotNil(t, err)
 		assert.Equal(t, TabInIndentationError, err)
@@ -691,7 +691,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		_, exists := directive.Dictionary["key:"]
 
@@ -704,7 +704,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 		assert.Nil(t, err)
 
 		var v *Directive
@@ -806,7 +806,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 	})
@@ -816,7 +816,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 	})
@@ -826,7 +826,7 @@ func TestDictionary(t *testing.T) {
 
 		directive := &Directive{}
 
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
 		assert.Nil(t, err)
 	})
@@ -849,12 +849,12 @@ func TestEmpty(t *testing.T) {
 
 		var err error
 
-		err = directive.Marshal(dat)
+		err = directive.Parse(dat)
 		assert.NotNil(t, err)
 		// TODO: should be parsed and treat as null/nil by converter
 		assert.Equal(t, EmptyDataError, err)
 
-		err = directive.Marshal([]byte("\n  \n"))
+		err = directive.Parse([]byte("\n  \n"))
 		assert.NotNil(t, err)
 		assert.Equal(t, EmptyDataError, err)
 	})
@@ -871,13 +871,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_1/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1023,13 +1023,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_2/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1116,13 +1116,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_3/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1168,13 +1168,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_4/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1209,13 +1209,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_5/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1274,13 +1274,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_6/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
@@ -1332,13 +1332,13 @@ func TestHolistic(t *testing.T) {
 		dat, _ := ioutil.ReadFile("./test/cases/holistic_7/load_in.nt")
 
 		directive := &Directive{}
-		err := directive.Marshal(dat)
+		err := directive.Parse(dat)
 
-		t.Run("should marshal successfully", func(t *testing.T) {
+		t.Run("should Parse successfully", func(t *testing.T) {
 			assert.Nil(t, err)
 		})
 
-		t.Run("should marshal with collect structure", func(t *testing.T) {
+		t.Run("should Parse with collect structure", func(t *testing.T) {
 			assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
 			rootDict := directive.Dictionary
