@@ -29,7 +29,7 @@ var (
 	RootStringError                   = errors.New("ntgo: no string allowed on root level")
 	StringHasChildError               = errors.New("ntgo: string type can not have child")
 	TextHasChildError                 = errors.New("ntgo: text type can not have child")
-	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent leves")
+	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent levels")
 	StringWithNewLineError            = errors.New("ntgo: string type can not have line break")
 	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
 )
@@ -44,6 +44,9 @@ type Directive struct {
 
 	IndentSize int
 	Depth      int
+
+	threads   chan int
+	errorChan chan error
 }
 
 func (d *Directive) Unmarshal() string {
@@ -112,6 +115,32 @@ func (d *Directive) Marshal(content []byte) (err error) {
 	var index int
 	loadedNextLine := false
 
+	d.threads = make(chan int)
+	d.errorChan = make(chan error)
+	joined := make(chan error)
+	concurrency := 0
+
+	go func() {
+		for addition := range d.threads {
+			concurrency += addition
+			if concurrency == 0 {
+				joined <- nil
+				break
+			}
+		}
+	}()
+
+	go func() {
+		for err := range d.errorChan {
+			if err != nil {
+				joined <- err
+				break
+			}
+		}
+	}()
+
+	d.threads <- 1
+
 	for eof := false; !eof; {
 		if !loadedNextLine {
 			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
@@ -146,8 +175,14 @@ func (d *Directive) Marshal(content []byte) (err error) {
 		}
 	}
 
-	if err == nil && d.Type == DirectiveTypeUnknown {
-		err = EmptyDataError
+	d.threads <- -1
+
+	if err == nil {
+		if d.Type == DirectiveTypeUnknown {
+			err = EmptyDataError
+		} else {
+			err = <-joined
+		}
 	}
 
 	return
@@ -370,14 +405,19 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 
 		// marshal child
 		// TODO: elementContent internally converted to bytes.Buffer, inpsect its performance cost
-		if err := child.Marshal(elementContent); err != nil {
-			if err != EmptyDataError {
-				return nil, hasNext, err
+		d.threads <- 1
+		go func() {
+			if err := child.Marshal(elementContent); err == EmptyDataError {
+				// treat empty data as empty string
+				child.Type = DirectiveTypeString
+				child.String = ""
+			} else if err != nil {
+				d.errorChan <- err
+				return
 			}
-			// treat empty data as empty string
-			child.Type = DirectiveTypeString
-			child.String = ""
-		}
+
+			d.threads <- -1
+		}()
 	}
 
 	d.List = append(d.List, child)
@@ -522,12 +562,19 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		} else {
 			child.IndentSize = d.IndentSize
 
-			if err = child.Marshal(elementContent); err == EmptyDataError {
-				child.Type = DirectiveTypeString
-				child.String = ""
-			} else if err != nil {
-				return nil, hasNext, err
-			}
+			d.threads <- 1
+			go func() {
+				if err = child.Marshal(elementContent); err == EmptyDataError {
+					// treat empty data as empty string
+					child.Type = DirectiveTypeString
+					child.String = ""
+				} else if err != nil {
+					d.errorChan <- err
+					return
+				}
+
+				d.threads <- -1
+			}()
 		}
 	}
 
