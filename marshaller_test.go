@@ -63,6 +63,9 @@ list_text:
   -
     > list text cccc
     > list text dddd
+list_string:
+  - list string aaaa
+  - list string bbbb
 `
 
 // TODO: list with different elements that have differed schema
@@ -92,6 +95,7 @@ type SampleStruct struct {
 	ListOfListOfStruct [][]SampleListElement `nt:"list_of_list_struct"`
 	ListOfListOfStructPointer [][]SampleListElement `nt:"list_of_list_struct_pointer"`
 	ListOfText [][]string `nt:"list_text"`
+	ListOfString []string `nt:"list_string"`
 
 	NoTag string
 }
@@ -172,5 +176,12 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, "list text bbbb", s.ListOfText[0][1])
 		assert.Equal(t, "list text cccc\n", s.ListOfText[1][0])
 		assert.Equal(t, "list text dddd", s.ListOfText[1][1])
+	})
+
+	t.Run("slice of string", func(t *testing.T) {
+		s := subject()
+
+		assert.Equal(t, "list string aaaa", s.ListOfString[0])
+		assert.Equal(t, "list string bbbb", s.ListOfString[1])
 	})
 }

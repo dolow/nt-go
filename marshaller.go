@@ -11,8 +11,14 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 			{
 				// multiline text
 				work := *ref
-				for _, line := range directive.Text {
-					work = reflect.Append(work, reflect.ValueOf(line))
+				if directive.Type == DirectiveTypeText {
+					for _, line := range directive.Text {
+						work = reflect.Append(work, reflect.ValueOf(line))
+					}
+				} else if directive.Type == DirectiveTypeList {
+					for _, child := range directive.List {
+						work = reflect.Append(work, reflect.ValueOf(child.String))
+					}
 				}
 				ref.Set(work)
 			}
