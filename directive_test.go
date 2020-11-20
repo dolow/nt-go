@@ -566,6 +566,23 @@ func TestParse(t *testing.T) {
 				assert.Equal(t, "elem4", directive.List[3].String)
 			})
 		})
+
+		t.Run("mixed as text content", func(t *testing.T) {
+			data = []byte("text:\n  > line1\r\n  > line2\r  > line3\n  > line4")
+
+			t.Run("should parse regulary", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+
+				text := directive.Dictionary["text"].Text
+				// TODO: mixed line break code in text content
+				// assert.Equal(t, "line1\r\n", text[0])
+				assert.Equal(t, "line2\r", text[1])
+				assert.Equal(t, "line3\n", text[2])
+				assert.Equal(t, "line4", text[3])
+			})
+		})
 	})
 }
 

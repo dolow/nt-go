@@ -112,7 +112,7 @@ func readLine(buffer *bytes.Buffer) (line []byte, err error) {
 			break
 		}
 		line = append(line, b)
-		// skip CRLF case, it will treated as empty line
+		// TODO: prpoperly include CRLF
 		if b == CR || b == LF {
 			break
 		}
@@ -365,6 +365,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 		// collect child content lines
 		for eof := false; !eof; {
 			var err error
+			// TODO: reading twice
 			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
