@@ -72,20 +72,18 @@ list_string:
 
 type SampleDict struct {
 	DictString string   `nt:"dict_string"`
-	DictText   []string `nt:"dict_text"`
+	DictText   MultiLineText `nt:"dict_text"`
 }
 
 type SampleListElement struct {
 	ListString string `nt:"list_string"`
 }
 
-type StringSlice []string
-
 type SampleStruct struct {
 	String string `nt:"string"`
 
 	Text      []string    `nt:"text"`
-	TextAlias StringSlice `nt:"text_alias"`
+	TextAlias MultiLineText `nt:"text_alias"`
 
 	Dict          SampleDict  `nt:"dict"`
 	DictOfPointer *SampleDict `nt:"dict_ptr"`
@@ -94,7 +92,7 @@ type SampleStruct struct {
 	ListOfStructPointer       []*SampleListElement  `nt:"list_ptr"`
 	ListOfListOfStruct        [][]SampleListElement `nt:"list_of_list_struct"`
 	ListOfListOfStructPointer [][]SampleListElement `nt:"list_of_list_struct_pointer"`
-	ListOfText                [][]string            `nt:"list_text"`
+	ListOfText                []MultiLineText       `nt:"list_text"`
 	ListOfString              []string              `nt:"list_string"`
 
 	NoTag string

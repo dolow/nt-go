@@ -66,7 +66,7 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	for i := 0; i < typ.NumField(); i++ {
 		fieldInfo := typ.Field(i)
 		fieldRef := substance.Field(i)
-		tagValue := fieldInfo.Tag.Get("nt")
+		tagValue := fieldInfo.Tag.Get(MarshallerTag)
 
 		if tagValue == "" {
 			continue

@@ -38,7 +38,7 @@ type Directive struct {
 	Type DirectiveType
 
 	String     string
-	Text       []string
+	Text       MultiLineText
 	List       []*Directive
 	Dictionary map[string]*Directive
 

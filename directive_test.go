@@ -97,7 +97,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("text", func(t *testing.T) {
 
-		expect := []string{"multiple\n", "line of text"}
+		expect := MultiLineText{"multiple\n", "line of text"}
 
 		t.Run("regular text", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("> %s> %s", expect[0], expect[1]))
@@ -176,7 +176,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("list", func(t *testing.T) {
 		t.Run("string elements", func(t *testing.T) {
-			expect := []string{"string", "elements"}
+			expect := MultiLineText{"string", "elements"}
 			data = []byte(fmt.Sprintf(
 				`- %s
 - %s`,
@@ -202,7 +202,7 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("string elements with unbalanced forwarding spaces", func(t *testing.T) {
-			expect := []string{"   string", "elements"}
+			expect := MultiLineText{"   string", "elements"}
 			data = []byte(fmt.Sprintf(
 				`- %s
 - %s`,
@@ -229,9 +229,9 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("text elements", func(t *testing.T) {
-			expect := [][]string{
-				[]string{"aaaa", "bbbb"},
-				[]string{"cccc", "dddd"},
+			expect := []MultiLineText{
+				MultiLineText{"aaaa", "bbbb"},
+				MultiLineText{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
 				`-
@@ -271,9 +271,9 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("text elements with unbalanced indentations", func(t *testing.T) {
-			expect := [][]string{
-				[]string{"aaaa", "bbbb"},
-				[]string{"cccc", "dddd"},
+			expect := []MultiLineText{
+				MultiLineText{"aaaa", "bbbb"},
+				MultiLineText{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
 				`-
@@ -304,9 +304,9 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("list elements", func(t *testing.T) {
-			expect := [][]string{
-				[]string{"aaaa", "bbbb"},
-				[]string{"cccc", "dddd"},
+			expect := []MultiLineText{
+				MultiLineText{"aaaa", "bbbb"},
+				MultiLineText{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
 				`-
@@ -344,9 +344,9 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("list elements with unbalanced indentations", func(t *testing.T) {
-			expect := [][]string{
-				[]string{"aaaa", "bbbb"},
-				[]string{"cccc", "dddd"},
+			expect := []MultiLineText{
+				MultiLineText{"aaaa", "bbbb"},
+				MultiLineText{"cccc", "dddd"},
 			}
 			data = []byte(fmt.Sprintf(
 				`-
@@ -382,12 +382,12 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("dictionary string elements", func(t *testing.T) {
-			expect := [][][]string{
-				[][]string{
+			expect := [][]MultiLineText{
+				[]MultiLineText{
 					{"key1", "val1"},
 					{"key2", "val2"},
 				},
-				[][]string{
+				[]MultiLineText{
 					{"key3", "val3"},
 					{"key4", "val4"},
 				},
@@ -428,12 +428,12 @@ func TestParse(t *testing.T) {
 		})
 
 		t.Run("dictionary string elements with unbalanced spaces", func(t *testing.T) {
-			expect := [][][]string{
-				[][]string{
+			expect := [][]MultiLineText{
+				[]MultiLineText{
 					{"key1", "   val1   "},
 					{"key2", "val2"},
 				},
-				[][]string{
+				[]MultiLineText{
 					{"key3", "val3"},
 					{"key4", "\tval4\t"},
 				},

@@ -14,6 +14,8 @@ const (
 
 	EmptyChar     byte = 0x00
 	NotFoundIndex int  = -1
+
+	MarshallerTag = "nt"
 )
 
 type MultiLineText []string
