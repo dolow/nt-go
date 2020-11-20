@@ -513,6 +513,60 @@ func TestParse(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("line breaks", func(t *testing.T) {
+		t.Run("cr", func(t *testing.T) {
+			data = []byte("- elem1\r- elem2")
+
+			t.Run("should parse regulary", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+				assert.Equal(t, "elem1", directive.List[0].String)
+				assert.Equal(t, "elem2", directive.List[1].String)
+			})
+		})
+		t.Run("lf", func(t *testing.T) {
+			data = []byte("- elem1\n- elem2")
+
+			t.Run("should parse regulary", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+				assert.Equal(t, "elem1", directive.List[0].String)
+				assert.Equal(t, "elem2", directive.List[1].String)
+			})
+		})
+		t.Run("crlf", func(t *testing.T) {
+			data = []byte("- elem1\r\n- elem2")
+
+			t.Run("should parse regulary", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+				assert.Equal(t, "elem1", directive.List[0].String)
+				assert.Equal(t, "elem2", directive.List[1].String)
+			})
+		})
+
+		t.Run("mixed", func(t *testing.T) {
+			data = []byte("- elem1\r\n- elem2\r- elem3\n- elem4")
+
+			t.Run("should parse regulary", func(t *testing.T) {
+				directive, err := subject()
+
+				assert.Nil(t, err)
+				assert.Equal(t, DirectiveTypeList, directive.Type)
+				assert.Equal(t, "elem1", directive.List[0].String)
+				assert.Equal(t, "elem2", directive.List[1].String)
+				assert.Equal(t, "elem3", directive.List[2].String)
+				assert.Equal(t, "elem4", directive.List[3].String)
+			})
+		})
+	})
 }
 
 func TestToString(t *testing.T) {

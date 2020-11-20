@@ -64,8 +64,9 @@ func (d *Directive) ToString() string {
 	case DirectiveTypeList:
 		{
 			for i := 0; i < len(d.List); i++ {
-				dataLn := string(LineBreak)
-				tailLn := string(LineBreak)
+				// TODO: user prefered line breal code
+				dataLn := string(LF)
+				tailLn := string(LF)
 				if i == len(d.List)-1 {
 					tailLn = ""
 				}
@@ -82,8 +83,8 @@ func (d *Directive) ToString() string {
 		{
 			it := 0
 			for k, v := range d.Dictionary {
-				dataLn := string(LineBreak)
-				tailLn := string(LineBreak)
+				dataLn := string(LF)
+				tailLn := string(LF)
 				if it == len(d.Dictionary)-1 {
 					tailLn = ""
 				}
@@ -102,6 +103,23 @@ func (d *Directive) ToString() string {
 	return str
 }
 
+func readLine(buffer *bytes.Buffer) (line []byte, err error) {
+	var b byte
+	for err != io.EOF {
+		if b, err = buffer.ReadByte(); err != nil && err != io.EOF {
+			break
+		} else if b == EmptyChar {
+			break
+		}
+		line = append(line, b)
+		// skip CRLF case, it will treated as empty line
+		if b == CR || b == LF {
+			break
+		}
+	}
+	return
+}
+
 func (d *Directive) Parse(content []byte) (err error) {
 	d.Type = DirectiveTypeUnknown
 
@@ -114,7 +132,7 @@ func (d *Directive) Parse(content []byte) (err error) {
 
 	for eof := false; !eof; {
 		if !loadedNextLine {
-			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
+			if currentLine, err = readLine(buffer); err == io.EOF {
 				err = nil
 				eof = true
 			} else if err != nil {
@@ -161,7 +179,7 @@ func detectDirectiveType(line []byte) (DirectiveType, int, error) {
 	for ; len(line) > index; index++ {
 		char := line[index]
 
-		if char != Space && char != LineBreak {
+		if char != Space && char != CR && char != LF {
 			chars[0] = char
 			if index+1 == len(line) {
 				chars[1] = EmptyChar
@@ -181,17 +199,19 @@ func detectDirectiveType(line []byte) (DirectiveType, int, error) {
 		return DirectiveTypeUnknown, index, TabInIndentationError
 	case TextSymbol:
 		{
-			if chars[1] == Space || chars[1] == LineBreak || chars[1] == EmptyChar {
+			switch chars[1] {
+			case Space, CR, LF, EmptyChar:
 				directiveType = DirectiveTypeText
-			} else {
+			default:
 				directiveType = DirectiveTypeString
 			}
 		}
 	case ListSymbol:
 		{
-			if chars[1] == Space || chars[1] == LineBreak || chars[1] == EmptyChar {
+			switch chars[1] {
+			case Space, CR, LF, EmptyChar:
 				directiveType = DirectiveTypeList
-			} else {
+			default:
 				directiveType = DirectiveTypeString
 			}
 		}
@@ -222,7 +242,7 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 	for {
 		char, nextIndex := readFirstMeaningfulCharacter(currentLine, false)
 
-		if char != CommentSymbol && char != LineBreak && nextIndex != NotFoundIndex {
+		if char != CommentSymbol && char != CR && char != LF && nextIndex != NotFoundIndex {
 			// validate
 			if char == TextSymbol {
 				if nextIndex != baseIndentSpaces {
@@ -245,9 +265,10 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 			if len(currentLine) <= nextIndex+1 {
 				// text ends with symbol
 				d.Text = append(d.Text, "")
-			} else if currentLine[nextIndex+1] == LineBreak {
+			} else if currentLine[nextIndex+1] == CR || currentLine[nextIndex+1] == LF {
 				// text symbol with no space
-				d.Text = append(d.Text, string(LineBreak))
+				// TODO: CRLF case
+				d.Text = append(d.Text, string(currentLine[nextIndex+1]))
 			} else {
 				// after text symbol(>) and space
 				d.Text = append(d.Text, string(currentLine[nextIndex+2:]))
@@ -261,7 +282,7 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 			return nil, hasNext, nil
 		}
 
-		if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err != nil && err != io.EOF {
+		if currentLine, err = readLine(buffer); err != nil && err != io.EOF {
 			return nil, hasNext, err
 		}
 	}
@@ -294,7 +315,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 	if firstChar != EmptyChar {
 		for eof := false; !eof; {
 			var err error
-			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
+			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
 				return nil, hasNext, err
@@ -334,7 +355,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 			child.IndentSize = d.IndentSize
 			child.Depth = d.Depth + 1
 
-			if initialLine[len(initialLine)-1] == LineBreak {
+			if initialLine[len(initialLine)-1] == CR || initialLine[len(initialLine)-1] == LF {
 				child.String = string(initialLine[baseIndentSpaces+2 : len(initialLine)-1])
 			} else {
 				child.String = string(initialLine[baseIndentSpaces+2:])
@@ -344,7 +365,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 		// collect child content lines
 		for eof := false; !eof; {
 			var err error
-			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
+			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
 				return nil, hasNext, err
@@ -425,7 +446,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 	// child is string
 	if firstChar != EmptyChar {
 		for eof := false; !eof; {
-			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
+			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
 				return nil, hasNext, err
@@ -468,7 +489,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 			child.IndentSize = d.IndentSize
 			child.Depth = d.Depth + 1
 
-			if initialLine[len(initialLine)-1] == LineBreak {
+			if initialLine[len(initialLine)-1] == CR || initialLine[len(initialLine)-1] == LF {
 				child.String = string(initialLine[valueIndex : len(initialLine)-1])
 			} else {
 				child.String = string(initialLine[valueIndex:])
@@ -476,7 +497,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		}
 	} else {
 		for eof := false; !eof; {
-			if currentLine, err = buffer.ReadBytes(byte(LineBreak)); err == io.EOF {
+			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
 				return nil, hasNext, err
@@ -542,14 +563,14 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 
 func removeStringTrailingLineBreaks(s *string) {
 	l := len(*s)
-	if l > 0 && (*s)[l-1] == LineBreak {
+	if l > 0 && ((*s)[l-1] == CR || (*s)[l-1] == LF) {
 		*s = (*s)[:l-1]
 	}
 }
 
 func removeBytesTrailingLineBreaks(b *[]byte) {
 	l := len(*b)
-	if l > 0 && (*b)[l-1] == LineBreak {
+	if l > 0 && ((*b)[l-1] == CR || (*b)[l-1] == LF) {
 		*b = (*b)[:l-1]
 	}
 }
@@ -604,14 +625,16 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
 	for len(line) > index {
 		char = line[index]
 
-		if char != Space {
-			if char == LineBreak {
+		switch char {
+		case Space:
+		case CR, LF:
+			{
 				if !skipLineBreak {
 					return char, index
 				}
-			} else {
-				return char, index
 			}
+		default:
+			return char, index
 		}
 
 		index++

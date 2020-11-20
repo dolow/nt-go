@@ -8,7 +8,8 @@ const (
 	IndentChar             = ' '
 	Space                  = ' '
 	Tab                    = '\t'
-	LineBreak              = '\n'
+	CR                     = '\r'
+	LF                     = '\n'
 	Quote                  = '\''
 	DoubleQuote            = '"'
 
