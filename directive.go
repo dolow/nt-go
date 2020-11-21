@@ -22,14 +22,14 @@ const (
 var (
 	NextDirectiveAppearedError        = errors.New("ntgo: next directive appeared")
 	DifferentTypesOnTheSameLevelError = errors.New("ntgo: can not place different types of entities on the same level")
-	DictionaryKeyNestedQuotesError    = errors.New("ntgo: quoted dictionary key can not contain any quotes")
+	DictionaryKeyWithUnpairedQuotes   = errors.New("ntgo: quoted dictionary key can not contain unpaired quotes")
 	EmptyDataError                    = errors.New("ntgo: data can not be empty")
 	RootLevelHasIndentError           = errors.New("ntgo: root level must not be indented")
 	TabInIndentationError             = errors.New("ntgo: indent can not contain tab")
 	RootStringError                   = errors.New("ntgo: no string allowed on root level")
 	StringHasChildError               = errors.New("ntgo: string type can not have child")
 	TextHasChildError                 = errors.New("ntgo: text type can not have child")
-	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent leves")
+	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent levels")
 	StringWithNewLineError            = errors.New("ntgo: string type can not have line break")
 	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
 )
@@ -143,6 +143,11 @@ func (d *Directive) Parse(content []byte) (err error) {
 
 		var directiveType DirectiveType
 		if directiveType, index, err = detectDirectiveType(currentLine); err != nil {
+			break
+		}
+
+		if d.Depth == 0 && index > 0 {
+			err = RootLevelHasIndentError
 			break
 		}
 
@@ -423,9 +428,6 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 	if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeDictionary {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
-	if d.Depth == 0 && baseIndentSpaces > 0 {
-		return nil, hasNext, RootLevelHasIndentError
-	}
 
 	key, valueIndex := detectKeyBytes(initialLine)
 
@@ -453,7 +455,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 	var child *Directive
 
 	// child is string
-	if firstChar != EmptyChar {
+	if len(initialLine) > valueIndex {
 		for eof := false; !eof; {
 			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
@@ -467,7 +469,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 				return nil, hasNext, TabInIndentationError
 			}
 
-			if nextIndex == NotFoundIndex {
+			if nextIndex == NotFoundIndex || char == CommentSymbol {
 				continue
 			}
 
@@ -505,6 +507,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 			}
 		}
 	} else {
+		levels := []int{}
 		for eof := false; !eof; {
 			lastLine := currentLine
 			if currentLine, err = readLine(buffer); err == io.EOF {
@@ -529,11 +532,37 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 			if nextIndex == NotFoundIndex {
 				continue
 			}
+
+			if char == CommentSymbol {
+				continue
+			}
+
 			// returned to same level
 			if nextIndex == baseIndentSpaces {
 				// it is next element
 				hasNext = true
 				break
+			}
+
+			// inspect indent level validity
+			if len(levels) == 0 {
+				levels = append(levels, nextIndex)
+			} else {
+				if levels[len(levels) - 1] < nextIndex {
+					levels = append(levels, nextIndex)
+				} else {
+					found := false
+					for i, l := range levels {
+						if l == nextIndex {
+							levels = levels[:i+1]
+							found = true
+							break
+						}
+					}
+					if !found {
+						return nil, hasNext, DifferentLevelOnSameChildError
+					}
+				}
 			}
 
 			if char != EmptyChar && char != ListSymbol && char != TextSymbol && char != CommentSymbol {
@@ -592,24 +621,49 @@ func removeBytesTrailingLineBreaks(b *[]byte) {
 	}
 }
 
+func trimQuotedBytes(data *[]byte) error {
+	for i, b := range *data {
+		if b == DoubleQuote || b == Quote {
+			for ri := len(*data) - 1; ri > i; ri-- {
+				rb := (*data)[ri]
+
+				if rb == b {
+					*data = (*data)[i + 1 : ri-1]
+					return nil
+				}
+
+				if (rb == Quote && b == DoubleQuote) || (rb == DoubleQuote && b == Quote) {
+					return DictionaryKeyWithUnpairedQuotes
+				}
+			}
+			return DictionaryKeyWithUnpairedQuotes
+		}
+	}
+	return nil
+}
+
 func sanitizeDictionaryKey(key *[]byte) error {
 	quoted := false
 
+	keyLen := len(*key)
+
 	// remove sorrounding quotes
-	if len(*key) >= 2 {
-		if ((*key)[0] == DoubleQuote && (*key)[len(*key)-1] == DoubleQuote) || ((*key)[0] == Quote && (*key)[len(*key)-1] == Quote) {
+	if keyLen >= 2 {
+		if ((*key)[0] == DoubleQuote && (*key)[keyLen-1] == DoubleQuote) || ((*key)[0] == Quote && (*key)[keyLen-1] == Quote) {
 			quoted = true
-			*key = (*key)[1 : len(*key)-1]
-			quotedKey := *key
-			// nested quote is allowed
-			if len(*key) >= 2 {
-				if ((*key)[0] == DoubleQuote && (*key)[len(*key)-1] == DoubleQuote) || ((*key)[0] == Quote && (*key)[len(*key)-1] == Quote) {
-					quotedKey = (*key)[1 : len(*key)-1]
+			*key = (*key)[1 : keyLen-1]
+			keyLen = len(*key)
+
+			workKey := make([]byte, keyLen)
+			copy(workKey, *key)
+
+			for {
+				beforeLen := len(workKey)
+				if err := trimQuotedBytes(&workKey); err != nil {
+					return err
 				}
-			}
-			for _, b := range quotedKey {
-				if b == DoubleQuote || b == Quote {
-					return DictionaryKeyNestedQuotesError
+				if len(workKey) == beforeLen {
+					break
 				}
 			}
 		}

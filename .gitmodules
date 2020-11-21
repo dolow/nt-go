@@ -1,0 +1,3 @@
+[submodule "official_cases"]
+	path = official_cases
+	url = git@github.com:KenKundert/nestedtext_tests.git

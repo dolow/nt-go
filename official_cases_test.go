@@ -8,6 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+const TestCasePath = "./official_cases/test_cases"
+
 func dumpMap(space string, m map[string]interface{}) {
 	for k, v := range m {
 		if mv, ok := v.(map[string]interface{}); ok {
@@ -23,7 +25,7 @@ func dumpMap(space string, m map[string]interface{}) {
 func TestString(t *testing.T) {
 	t.Run("string_1", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_1/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_1/load_in.nt")
 
 		directive := &Directive{}
 
@@ -41,7 +43,7 @@ func TestString(t *testing.T) {
 
 	t.Run("string_2", func(t *testing.T) {
 		// string can contain double quote
-		dat, _ := ioutil.ReadFile("./test/cases/string_2/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_2/load_in.nt")
 
 		directive := &Directive{}
 
@@ -59,7 +61,7 @@ func TestString(t *testing.T) {
 
 	t.Run("string_3", func(t *testing.T) {
 		// string can contain single quote
-		dat, _ := ioutil.ReadFile("./test/cases/string_3/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_3/load_in.nt")
 
 		directive := &Directive{}
 
@@ -77,7 +79,7 @@ func TestString(t *testing.T) {
 
 	t.Run("string_4", func(t *testing.T) {
 		// string can contain mixed quotes
-		dat, _ := ioutil.ReadFile("./test/cases/string_4/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_4/load_in.nt")
 
 		directive := &Directive{}
 
@@ -106,23 +108,56 @@ func TestString(t *testing.T) {
 		// TODO: json conversion
 	})
 	t.Run("string_6", func(t *testing.T) {
-		// string can not be begin with new line
-		dat, _ := ioutil.ReadFile("./test/cases/string_6/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_6/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, StringWithNewLineError, err)
 
+	})
+	t.Run("string_7", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_7/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Nil(t, err)
+
+		assert.Equal(t, DirectiveTypeText, directive.Type)
+		assert.Equal(t, 1, len(directive.Text))
+		assert.Equal(t, "what makes it green?", directive.Text[0])
+	})
+	t.Run("string_8", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_8/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Nil(t, err)
+
+		assert.Equal(t, DirectiveTypeText, directive.Type)
+		assert.Equal(t, 1, len(directive.Text))
+		assert.Equal(t, "what makes it green?", directive.Text[0])
+	})
+	t.Run("string_9", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_9/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Nil(t, err)
+
+		assert.Equal(t, DirectiveTypeText, directive.Type)
+		assert.Equal(t, 1, len(directive.Text))
+		assert.Equal(t, "what makes it green?", directive.Text[0])
 	})
 }
 
 func TestText(t *testing.T) {
-	t.Run("text_1", func(t *testing.T) {
+	t.Run("string_multiline_1", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_1/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_01/load_in.nt")
 
 		directive := &Directive{}
 
@@ -136,9 +171,9 @@ func TestText(t *testing.T) {
 		assert.Equal(t, "", directive.Text[1])
 	})
 
-	t.Run("text_2", func(t *testing.T) {
+	t.Run("string_multiline_2", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_2/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_02/load_in.nt")
 
 		directive := &Directive{}
 
@@ -146,15 +181,37 @@ func TestText(t *testing.T) {
 
 		assert.Nil(t, err)
 		assert.Equal(t, DirectiveTypeText, directive.Type)
-		assert.Equal(t, 2, len(directive.Text))
+		assert.Equal(t, 24, len(directive.Text))
 
 		// line break excluded
-		assert.Equal(t, "ingredients\n", directive.Text[0])
-		assert.Equal(t, "green chilies", directive.Text[1])
+		assert.Equal(t, "\n", directive.Text[0])
+		assert.Equal(t, "Lorem Ipsum\n", directive.Text[1])
+		assert.Equal(t, "\n", directive.Text[2])
+		assert.Equal(t, "    Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod\n", directive.Text[3])
+		assert.Equal(t, "tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, \n", directive.Text[4])
+		assert.Equal(t, "quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo \n", directive.Text[5])
+		assert.Equal(t, "consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse \n", directive.Text[6])
+		assert.Equal(t, "cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat \n", directive.Text[7])
+		assert.Equal(t, "non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.\n", directive.Text[8])
+		assert.Equal(t, "\n", directive.Text[9])
+		assert.Equal(t, "\n", directive.Text[10])
+		assert.Equal(t, "    Sed ut perspiciatis unde omnis iste natus error sit voluptatem\n", directive.Text[11])
+		assert.Equal(t, "accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab \n", directive.Text[12])
+		assert.Equal(t, "illo inventore veritatis et quasi architecto beatae vitae dicta sunt \n", directive.Text[13])
+		assert.Equal(t, "explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit \n", directive.Text[14])
+		assert.Equal(t, "aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem \n", directive.Text[15])
+		assert.Equal(t, "sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit \n", directive.Text[16])
+		assert.Equal(t, "amet, consectetur, adipisci velit, sed quia non numquam eius modi tempora \n", directive.Text[17])
+		assert.Equal(t, "incidunt ut labore et dolore magnam aliquam quaerat voluptatem. Ut enim ad \n", directive.Text[18])
+		assert.Equal(t, "minima veniam, quis nostrum exercitationem ullam corporis suscipit \n", directive.Text[19])
+		assert.Equal(t, "laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis autem vel eum \n", directive.Text[20])
+		assert.Equal(t, "iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae \n", directive.Text[21])
+		assert.Equal(t, "consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?\"\n", directive.Text[22])
+		assert.Equal(t, "", directive.Text[23])
 	})
-	t.Run("text_3", func(t *testing.T) {
+	t.Run("string_multiline_3", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_3/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_03/load_in.nt")
 
 		directive := &Directive{}
 
@@ -169,9 +226,9 @@ func TestText(t *testing.T) {
 		assert.Equal(t, 1, len(child.Text))
 		assert.Equal(t, "green chilies", child.Text[0])
 	})
-	t.Run("text_4", func(t *testing.T) {
+	t.Run("string_multiline_4", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_4/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_04/load_in.nt")
 
 		directive := &Directive{}
 
@@ -187,40 +244,65 @@ func TestText(t *testing.T) {
 		assert.Equal(t, `value '" value`, child.Text[0])
 	})
 
-	t.Run("text_5", func(t *testing.T) {
+	t.Run("string_multiline_5", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_5/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_05/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 
-	t.Run("text_6", func(t *testing.T) {
+	t.Run("string_multiline_6", func(t *testing.T) {
 		// string can contain tab characters
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_6/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_06/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 
-	t.Run("text_7", func(t *testing.T) {
+	t.Run("string_multiline_7", func(t *testing.T) {
 		// complex cases
-		dat, _ := ioutil.ReadFile("./test/cases/string_multiline_7/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_07/load_in.nt")
 		directive := &Directive{}
+
 		err := directive.Parse(dat)
+		assert.Equal(t, RootLevelHasIndentError, err)
+	})
+	t.Run("string_multiline_8", func(t *testing.T) {
+		// complex cases
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_08/load_in.nt")
+		directive := &Directive{}
 
+		err := directive.Parse(dat)
+		assert.Equal(t, TabInIndentationError, err)
+	})
+	t.Run("string_multiline_9", func(t *testing.T) {
+		// complex cases
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_09/load_in.nt")
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Equal(t, TabInIndentationError, err)
+	})
+	t.Run("string_multiline_10", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_10/load_in.nt")
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
+	})
+	t.Run("string_multiline_11", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_11/load_in.nt")
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
 		assert.Nil(t, err)
-		assert.Equal(t, DirectiveTypeDictionary, directive.Type)
 
-		t.Run("text_7_1", func(t *testing.T) {
+		t.Run("string_multiline_11_1", func(t *testing.T) {
 			child := directive.Dictionary["no newlines"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -228,7 +310,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_2", func(t *testing.T) {
+		t.Run("string_multiline_11_2", func(t *testing.T) {
 			child := directive.Dictionary["leading newline"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -237,7 +319,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[1])
 			assert.Equal(t, "line 2", child.Text[2])
 		})
-		t.Run("text_7_3", func(t *testing.T) {
+		t.Run("string_multiline_11_3", func(t *testing.T) {
 			child := directive.Dictionary["internal newline"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -246,7 +328,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "\n", child.Text[1])
 			assert.Equal(t, "line 2", child.Text[2])
 		})
-		t.Run("text_7_4", func(t *testing.T) {
+		t.Run("string_multiline_11_4", func(t *testing.T) {
 			child := directive.Dictionary["trailing newline"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -255,7 +337,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 2\n", child.Text[1])
 			assert.Equal(t, "", child.Text[2])
 		})
-		t.Run("text_7_5", func(t *testing.T) {
+		t.Run("string_multiline_11_5", func(t *testing.T) {
 			child := directive.Dictionary["leading, internal, and trailing newline"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -266,7 +348,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 2\n", child.Text[3])
 			assert.Equal(t, "", child.Text[4])
 		})
-		t.Run("text_7_6", func(t *testing.T) {
+		t.Run("string_multiline_11_6", func(t *testing.T) {
 			child := directive.Dictionary["leading newlines"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -276,7 +358,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[2])
 			assert.Equal(t, "line 2", child.Text[3])
 		})
-		t.Run("text_7_7", func(t *testing.T) {
+		t.Run("string_multiline_11_7", func(t *testing.T) {
 			child := directive.Dictionary["internal newlines"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -286,7 +368,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "\n", child.Text[2])
 			assert.Equal(t, "line 2", child.Text[3])
 		})
-		t.Run("text_7_8", func(t *testing.T) {
+		t.Run("string_multiline_11_8", func(t *testing.T) {
 			child := directive.Dictionary["trailing newlines"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -296,7 +378,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "\n", child.Text[2])
 			assert.Equal(t, "", child.Text[3])
 		})
-		t.Run("text_7_9", func(t *testing.T) {
+		t.Run("string_multiline_11_9", func(t *testing.T) {
 			child := directive.Dictionary["leading, internal, and trailing newlines"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -310,7 +392,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "\n", child.Text[6])
 			assert.Equal(t, "", child.Text[7])
 		})
-		t.Run("text_7_10", func(t *testing.T) {
+		t.Run("string_multiline_11_10", func(t *testing.T) {
 			child := directive.Dictionary["leading blank line"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -318,7 +400,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_11", func(t *testing.T) {
+		t.Run("string_multiline_11_11", func(t *testing.T) {
 			child := directive.Dictionary["internal blank line"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -326,7 +408,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_12", func(t *testing.T) {
+		t.Run("string_multiline_11_12", func(t *testing.T) {
 			child := directive.Dictionary["trailing blank line"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -334,7 +416,7 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_13", func(t *testing.T) {
+		t.Run("string_multiline_11_13", func(t *testing.T) {
 			child := directive.Dictionary["leading comment"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -342,15 +424,15 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 1\n", child.Text[0])
 			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_14", func(t *testing.T) {
+		t.Run("string_multiline_11_14", func(t *testing.T) {
 			child := directive.Dictionary["internal comment"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
 			assert.Equal(t, 2, len(child.Text))
-			assert.Equal(t, "line 3\n", child.Text[0])
-			assert.Equal(t, "line 4", child.Text[1])
+			assert.Equal(t, "line 1\n", child.Text[0])
+			assert.Equal(t, "line 2", child.Text[1])
 		})
-		t.Run("text_7_15", func(t *testing.T) {
+		t.Run("string_multiline_11_15", func(t *testing.T) {
 			child := directive.Dictionary["trailing comment"]
 
 			assert.Equal(t, DirectiveTypeText, child.Type)
@@ -359,12 +441,36 @@ func TestText(t *testing.T) {
 			assert.Equal(t, "line 2", child.Text[1])
 		})
 	})
+	t.Run("string_multiline_12", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/string_multiline_12/load_in.nt")
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Nil(t, err)
+
+		assert.Equal(t, "\n", directive.Text[0])
+		assert.Equal(t, "the BS character \\	Backslash (\\)\n", directive.Text[1])
+		assert.Equal(t, "the SQ character '	Single quote (')\n", directive.Text[2])
+		assert.Equal(t, "the DQ character \"	Double quote (\")\n", directive.Text[3])
+		assert.Equal(t, "the AB character 	ASCII Bell (BEL)\n", directive.Text[4])
+		assert.Equal(t, "the BS character 	ASCII Backspace (BS)\n", directive.Text[5])
+		assert.Equal(t, "the FF character 	ASCII Formfeed (FF)\n", directive.Text[6])
+		assert.Equal(t, "the LF character \n", directive.Text[7])
+		assert.Equal(t, "	ASCII Linefeed (LF)\n", directive.Text[8])
+		assert.Equal(t, "the CR character \n", directive.Text[9])
+		assert.Equal(t, "	ASCII Carriage Return (CR)\n", directive.Text[10])
+		assert.Equal(t, "the HT character 		ASCII Horizontal Tab (TAB)\n", directive.Text[11])
+		assert.Equal(t, "the VT character 	ASCII Vertical Tab (VT)\n", directive.Text[12])
+		assert.Equal(t, "the ES character 	ASCII escape character as octal value\n", directive.Text[13])
+		assert.Equal(t, "the ES character 	ASCII escape character as hex value\n", directive.Text[14])
+		assert.Equal(t, "", directive.Text[15])
+	})
 }
 
 func TestList(t *testing.T) {
 	t.Run("list_1", func(t *testing.T) {
 		// differing types at same level of indentation causes error
-		dat, _ := ioutil.ReadFile("./test/cases/list_1/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_1/load_in.nt")
 
 		directive := &Directive{}
 
@@ -382,7 +488,7 @@ func TestList(t *testing.T) {
 
 	t.Run("list_2", func(t *testing.T) {
 		// differing types at same level of indentation causes error
-		dat, _ := ioutil.ReadFile("./test/cases/list_2/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_2/load_in.nt")
 
 		directive := &Directive{}
 
@@ -410,100 +516,72 @@ func TestList(t *testing.T) {
 	})
 
 	t.Run("list_3", func(t *testing.T) {
-		// empty array should cause error
-		// TODO: json conversion
+		// json conversion
 	})
 
 	t.Run("list_4", func(t *testing.T) {
 		// list directive can not have dictionary key on the same level
-		dat, _ := ioutil.ReadFile("./test/cases/list_4/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_4/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 
 	t.Run("list_5", func(t *testing.T) {
 		// list elements levels can not be defered
-		dat, _ := ioutil.ReadFile("./test/cases/list_5/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_5/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
-		assert.Equal(t, DifferentLevelOnSameChildError, err)
+		assert.Equal(t, RootLevelHasIndentError, err)
 	})
 
 	t.Run("list_6", func(t *testing.T) {
 		// list elements levels can not be defered
-		dat, _ := ioutil.ReadFile("./test/cases/list_6/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_6/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, StringHasChildError, err)
 	})
 
 	t.Run("list_7", func(t *testing.T) {
 		// syntax complexed cases
-		dat, _ := ioutil.ReadFile("./test/cases/list_7/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_7/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
+		assert.Equal(t, TabInIndentationError, err)
+	})
 
+	t.Run("list_8", func(t *testing.T) {
+		// syntax complexed cases
+		dat, _ := ioutil.ReadFile(TestCasePath + "/list_8/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
 		assert.Nil(t, err)
+		assert.Equal(t, 11, len(directive.List))
 
-		for i, entity := range directive.List {
-			if i == 9 {
-				assert.Equal(t, DirectiveTypeText, entity.Type)
-			} else {
-				assert.Equal(t, DirectiveTypeString, entity.Type)
-			}
-		}
-
-		t.Run("list_7_1", func(t *testing.T) {
-			assert.Equal(t, ":", directive.List[0].String)
-		})
-		t.Run("list_7_2", func(t *testing.T) {
-			assert.Equal(t, `~!@#$%^&*()_+-1234567890{}[]|\:;<>?,./`, directive.List[1].String)
-		})
-		t.Run("list_7_3", func(t *testing.T) {
-			assert.Equal(t, `- value 3`, directive.List[2].String)
-		})
-		t.Run("list_7_4", func(t *testing.T) {
-			assert.Equal(t, `' : value 4:'`, directive.List[3].String)
-		})
-		t.Run("list_7_5", func(t *testing.T) {
-			assert.Equal(t, `> value 5`, directive.List[4].String)
-		})
-		t.Run("list_7_6", func(t *testing.T) {
-			assert.Equal(t, `#value 6`, directive.List[5].String)
-		})
-		t.Run("list_7_7", func(t *testing.T) {
-			assert.Equal(t, `key 7' : : value 7`, directive.List[6].String)
-		})
-		t.Run("list_7_8", func(t *testing.T) {
-			assert.Equal(t, `" value 8 "`, directive.List[7].String)
-		})
-		t.Run("list_7_9", func(t *testing.T) {
-			assert.Equal(t, `' value 9 '`, directive.List[8].String)
-		})
-		t.Run("list_7_10", func(t *testing.T) {
-			assert.Equal(t, 1, len(directive.List[9].Text))
-		})
-		t.Run("list_7_11", func(t *testing.T) {
-			assert.Equal(t, `value '" 10`, directive.List[9].Text[0])
-		})
-		t.Run("list_7_12", func(t *testing.T) {
-			assert.Equal(t, `And Fred said 'yabba dabba doo!' to Barney.`, directive.List[10].String)
-		})
+		assert.Equal(t, ":", directive.List[0].String)
+		assert.Equal(t, "~!@#$%^&*()_+-1234567890{}[]|\\:;<>?,./", directive.List[1].String)
+		assert.Equal(t, "- value 3", directive.List[2].String)
+		assert.Equal(t, "' : value 4:'", directive.List[3].String)
+		assert.Equal(t, "> value 5", directive.List[4].String)
+		assert.Equal(t, "#value 6", directive.List[5].String)
+		assert.Equal(t, "key 7' : : value 7", directive.List[6].String)
+		assert.Equal(t, "\" value 8 \"", directive.List[7].String)
+		assert.Equal(t, "' value 9 '", directive.List[8].String)
+		assert.Equal(t, DirectiveTypeText, directive.List[9].Type)
+		assert.Equal(t, 1, len(directive.List[9].Text))
+		assert.Equal(t, "value '\" 10", directive.List[9].Text[0])
+		assert.Equal(t, "And Fred said 'yabba dabba doo!' to Barney.", directive.List[10].String)
 	})
 }
 
@@ -522,7 +600,7 @@ func TestDictionary(t *testing.T) {
 				},
 			},
 		}
-		dat, _ := ioutil.ReadFile("./test/cases/dict_01/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_01/load_in.nt")
 
 		directive := &Directive{}
 		directive.Parse(dat)
@@ -540,154 +618,107 @@ func TestDictionary(t *testing.T) {
 		directive := &Directive{}
 
 		err := directive.Parse([]byte("key\n: value"))
-		assert.NotNil(t, err)
-		// DifferentTypesOnTheSameLevelError
 		assert.Equal(t, RootStringError, err)
 	})
 
 	t.Run("dict_03", func(t *testing.T) {
-		directive := &Directive{}
-
-		var err error
-
-		err = directive.Parse([]byte("'ke'y': value"))
-		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
-
-		err = directive.Parse([]byte("'ke\"y': value"))
-		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
+		// json input
 	})
 
 	t.Run("dict_04", func(t *testing.T) {
-		directive := &Directive{}
-
-		var err error
-
-		err = directive.Parse([]byte("\"ke\"y\": value"))
-		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
-
-		err = directive.Parse([]byte("\"ke'y\": value"))
-		assert.NotNil(t, err)
-		assert.Equal(t, DictionaryKeyNestedQuotesError, err)
+		// empty json object
 	})
 	t.Run("dict_05", func(t *testing.T) {
-		// empty json root object should cause error
-		// TODO: json conversion
-	})
-	t.Run("dict_06", func(t *testing.T) {
-		dat, _ := ioutil.ReadFile("./test/cases/dict_06/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_05/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-		assert.NotNil(t, err)
 		assert.Equal(t, RootLevelHasIndentError, err)
 	})
-	t.Run("dict_07", func(t *testing.T) {
-		// causes error when the dictionary elements has different indentation
-		dat, _ := ioutil.ReadFile("./test/cases/dict_07/load_in.nt")
+	t.Run("dict_06", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_06/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
-		// TODO: identify invalid indentation
 		assert.Equal(t, StringHasChildError, err)
 	})
-	t.Run("dict_08", func(t *testing.T) {
-		// causes error when the indentation contains tab
-		dat, _ := ioutil.ReadFile("./test/cases/dict_08/load_in.nt")
+	t.Run("dict_07", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_07/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, TabInIndentationError, err)
+	})
+	t.Run("dict_08", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_08/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 	t.Run("dict_09", func(t *testing.T) {
 		// differencing types on the same level
-		dat, _ := ioutil.ReadFile("./test/cases/dict_09/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_09/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
-		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
-	})
-	t.Run("dict_10", func(t *testing.T) {
-		// list elements with different indentation causes error, case of following element is deeper
-		dat, _ := ioutil.ReadFile("./test/cases/dict_10/load_in.nt")
-
-		directive := &Directive{}
-
-		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, StringHasChildError, err)
 	})
-	t.Run("dict_11", func(t *testing.T) {
-		// list elements with different indentation causes error, case of following element is shallower
-		dat, _ := ioutil.ReadFile("./test/cases/dict_11/load_in.nt")
+	t.Run("dict_10", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_10/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
+		assert.Equal(t, DifferentLevelOnSameChildError, err)
+	})
+	t.Run("dict_11", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_11/load_in.nt")
 
-		assert.NotNil(t, err)
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
 		assert.Equal(t, DifferentLevelOnSameChildError, err)
 	})
 	t.Run("dict_12", func(t *testing.T) {
-		// differing types at same level of indentation causes error
-		dat, _ := ioutil.ReadFile("./test/cases/dict_12/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_12/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 	})
 	t.Run("dict_13", func(t *testing.T) {
-		// string elements starts with new line causes error
-		dat, _ := ioutil.ReadFile("./test/cases/dict_13/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_13/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, StringWithNewLineError, err)
 	})
 	t.Run("dict_14", func(t *testing.T) {
-		// dictionary elements with same key causes error
-		dat, _ := ioutil.ReadFile("./test/cases/dict_14/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_14/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, DictionaryDuplicateKeyError, err)
 	})
 	t.Run("dict_15", func(t *testing.T) {
-		// causes error when the dictionary text elements has tab indentation
-		dat, _ := ioutil.ReadFile("./test/cases/dict_15/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_15/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
-		assert.NotNil(t, err)
 		assert.Equal(t, TabInIndentationError, err)
 	})
 	t.Run("dict_16", func(t *testing.T) {
-		// key can contain ":"
-		dat, _ := ioutil.ReadFile("./test/cases/dict_16/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_16/load_in.nt")
 
 		directive := &Directive{}
 
@@ -699,8 +730,7 @@ func TestDictionary(t *testing.T) {
 		assert.True(t, exists)
 	})
 	t.Run("dict_17", func(t *testing.T) {
-		// empty key, key sorrounded by quetes and starts with ">", "-", "#", and special characters are ok
-		dat, _ := ioutil.ReadFile("./test/cases/dict_17/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_17/load_in.nt")
 
 		directive := &Directive{}
 
@@ -801,33 +831,27 @@ func TestDictionary(t *testing.T) {
 		})
 	})
 	t.Run("dict_18", func(t *testing.T) {
-		// key with quotes without sorrounding quates are ok
-		dat, _ := ioutil.ReadFile("./test/cases/dict_18/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_18/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
 		assert.Nil(t, err)
 	})
 	t.Run("dict_19", func(t *testing.T) {
-		// key with trailing white spaces are ignored
-		dat, _ := ioutil.ReadFile("./test/cases/dict_19/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_19/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
 		assert.Nil(t, err)
 	})
 	t.Run("dict_20", func(t *testing.T) {
-		// allowed mixed syntaxes cases
-		dat, _ := ioutil.ReadFile("./test/cases/dict_20/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_20/load_in.nt")
 
 		directive := &Directive{}
 
 		err := directive.Parse(dat)
-
 		assert.Nil(t, err)
 	})
 	t.Run("dict_21", func(t *testing.T) {
@@ -838,24 +862,72 @@ func TestDictionary(t *testing.T) {
 		// json number for key is not allowed
 		// TODO: json conversion
 	})
+	t.Run("dict_23", func(t *testing.T) {
+		dat, _ := ioutil.ReadFile(TestCasePath + "/dict_23/load_in.nt")
+
+		directive := &Directive{}
+
+		err := directive.Parse(dat)
+		assert.Nil(t, err)
+
+		var value *Directive
+		value, _ = directive.Dictionary["key1"]
+		assert.Equal(t, "value 1", value.String)
+		value, _ = directive.Dictionary["key2"]
+		assert.Equal(t, "value 2", value.String)
+		value, _ = directive.Dictionary["key 3"]
+		assert.Equal(t, "value 3", value.String)
+		value, _ = directive.Dictionary["key 4"]
+		assert.Equal(t, "value 4", value.String)
+		value, _ = directive.Dictionary["key5"]
+		assert.Equal(t, "", value.String)
+		value, _ = directive.Dictionary["key6"]
+		assert.Equal(t, "", value.String)
+		value, _ = directive.Dictionary[" key7 "]
+		assert.Equal(t, "value 7", value.String)
+		value, _ = directive.Dictionary[" key8 "]
+		assert.Equal(t, "value 8", value.String)
+		value, _ = directive.Dictionary[" ' key9 ' "]
+		assert.Equal(t, "value 9", value.String)
+		value, _ = directive.Dictionary[" \" key10 \" "]
+		assert.Equal(t, "value 10", value.String)
+		//value, _ = directive.Dictionary[" \" key11: \" "]
+		//assert.Equal(t, "value 11", value.String)
+		//value, _ = directive.Dictionary[" \" key12 : \" "]
+		//assert.Equal(t, "value 12", value.String)
+		//value, _ = directive.Dictionary[" \" key13: "]
+		//assert.Equal(t, "value 13", value.String)
+		//value, _ = directive.Dictionary[" \" key14 : "]
+		//assert.Equal(t, "value 14", value.String)
+		//value, _ = directive.Dictionary[" ' key15': "]
+		//assert.Equal(t, "value 15", value.String)
+		//value, _ = directive.Dictionary[" ' key16' : "]
+		//assert.Equal(t, "value 16", value.String)
+		value, _ = directive.Dictionary[""]
+		assert.Equal(t, "value 17", value.String)
+		//value, _ = directive.Dictionary[" ' key18\"' : "]
+		//assert.Equal(t, "value 18", value.String)
+		//value, _ = directive.Dictionary[" \" key19'\" : "]
+		//assert.Equal(t, "value 19", value.String)
+	})
+	t.Run("dict_24", func(t *testing.T) {
+		// json input
+	})
 }
 
 func TestEmpty(t *testing.T) {
 	t.Run("empty_1", func(t *testing.T) {
 		// empty content should be null
-		dat, _ := ioutil.ReadFile("./test/cases/empty_1/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/empty_1/load_in.nt")
 
 		directive := &Directive{}
 
 		var err error
 
 		err = directive.Parse(dat)
-		assert.NotNil(t, err)
-		// TODO: should be parsed and treat as null/nil by converter
 		assert.Equal(t, EmptyDataError, err)
 
 		err = directive.Parse([]byte("\n  \n"))
-		assert.NotNil(t, err)
 		assert.Equal(t, EmptyDataError, err)
 	})
 }
@@ -868,7 +940,7 @@ func TestHolistic(t *testing.T) {
 	}
 
 	t.Run("holistic_1", func(t *testing.T) {
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_1/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_1/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1020,7 +1092,7 @@ func TestHolistic(t *testing.T) {
 	})
 
 	t.Run("holistic_2", func(t *testing.T) {
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_2/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_2/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1113,7 +1185,7 @@ func TestHolistic(t *testing.T) {
 	})
 
 	t.Run("holistic_3", func(t *testing.T) {
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_3/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_3/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1165,7 +1237,7 @@ func TestHolistic(t *testing.T) {
 
 	t.Run("holistic_4", func(t *testing.T) {
 		// empty content should be null
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_4/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_4/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1206,7 +1278,7 @@ func TestHolistic(t *testing.T) {
 
 	t.Run("holistic_5", func(t *testing.T) {
 		// empty content should be null
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_5/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_5/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1233,7 +1305,7 @@ func TestHolistic(t *testing.T) {
 				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
 				assert.Equal(t, 2, len(keyAddress.Text))
 				assert.Equal(t, "138 Almond Street\n", keyAddress.Text[0])
-				assert.Equal(t, "Topika, Kansas 20697", keyAddress.Text[1])
+				assert.Equal(t, "Topeka, Kansas 20697", keyAddress.Text[1])
 
 				keyPhone := getValueWithAssert(t, dictPresident, "phone")
 				assert.Equal(t, DirectiveTypeDictionary, keyPhone.Type)
@@ -1271,7 +1343,7 @@ func TestHolistic(t *testing.T) {
 
 	t.Run("holistic_6", func(t *testing.T) {
 		// empty content should be null
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_6/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_6/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1298,7 +1370,7 @@ func TestHolistic(t *testing.T) {
 				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
 				assert.Equal(t, 2, len(keyAddress.Text))
 				assert.Equal(t, "2586 Marigold Lane\n", keyAddress.Text[0])
-				assert.Equal(t, "Topika, Kansas 20682", keyAddress.Text[1])
+				assert.Equal(t, "Topeka, Kansas 20682", keyAddress.Text[1])
 
 				keyPhone := getValueWithAssert(t, dictVp, "phone")
 				assert.Equal(t, DirectiveTypeString, keyPhone.Type)
@@ -1306,7 +1378,7 @@ func TestHolistic(t *testing.T) {
 
 				keyEmail := getValueWithAssert(t, dictVp, "email")
 				assert.Equal(t, DirectiveTypeString, keyEmail.Type)
-				assert.Equal(t, "margarett.hodge@uk.edu", keyEmail.String)
+				assert.Equal(t, "margarett.hodge@ku.edu", keyEmail.String)
 
 				keyKids := getValueWithAssert(t, dictVp, "kids")
 				assert.Equal(t, DirectiveTypeList, keyKids.Type)
@@ -1329,7 +1401,7 @@ func TestHolistic(t *testing.T) {
 
 	t.Run("holistic_7", func(t *testing.T) {
 		// empty content should be null
-		dat, _ := ioutil.ReadFile("./test/cases/holistic_7/load_in.nt")
+		dat, _ := ioutil.ReadFile(TestCasePath + "/holistic_7/load_in.nt")
 
 		directive := &Directive{}
 		err := directive.Parse(dat)
@@ -1356,7 +1428,7 @@ func TestHolistic(t *testing.T) {
 				assert.Equal(t, DirectiveTypeText, keyAddress.Type)
 				assert.Equal(t, 2, len(keyAddress.Text))
 				assert.Equal(t, "\t 3636 Buffalo Ave \t\n", keyAddress.Text[0])
-				assert.Equal(t, "\t Topika, Kansas 20692\t ", keyAddress.Text[1])
+				assert.Equal(t, "\t Topeka, Kansas 20692\t ", keyAddress.Text[1])
 			}
 		})
 	})

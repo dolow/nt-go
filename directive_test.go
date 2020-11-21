@@ -119,59 +119,29 @@ func TestParse(t *testing.T) {
 		t.Run("texts start with spaces", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("  > %s  > %s", expect[0], expect[1]))
 
-			t.Run("Type should be DirectiveTypeText", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, DirectiveTypeText, directive.Type)
-			})
-			t.Run("Text should be input string array", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, expect, directive.Text)
+			t.Run("should return RootLevelHasIndentError", func(t *testing.T) {
+				_, err := subject()
+				assert.Equal(t, RootLevelHasIndentError, err)
 			})
 		})
 
-		t.Run("texts start with blank line", func(t *testing.T) {
+		t.Run("texts start with spaces after blank line", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("\n  > %s  > %s", expect[0], expect[1]))
 
-			t.Run("Type should be DirectiveTypeText", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, DirectiveTypeText, directive.Type)
-			})
-			t.Run("Text should be input string array", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, expect, directive.Text)
+			t.Run("should return RootLevelHasIndentError", func(t *testing.T) {
+				_, err := subject()
+				assert.Equal(t, RootLevelHasIndentError, err)
 			})
 		})
 
-		t.Run("texts start with blank line with forwarding spaces", func(t *testing.T) {
+		t.Run("texts start with spaces after blank line with spaces", func(t *testing.T) {
 			data = []byte(fmt.Sprintf("  \n  > %s  > %s", expect[0], expect[1]))
 
-			t.Run("Type should be DirectiveTypeText", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, DirectiveTypeText, directive.Type)
-			})
-			t.Run("Text should be input string array", func(t *testing.T) {
-				directive, err := subject()
-
-				assert.Nil(t, err)
-				assert.Equal(t, expect, directive.Text)
+			t.Run("should return RootLevelHasIndentError", func(t *testing.T) {
+				_, err := subject()
+				assert.Equal(t, RootLevelHasIndentError, err)
 			})
 		})
-
-		// irregular case
-		/*
-			t.Run("texts start with different indentations", func(t *testing.T) {
-			})
-		*/
 	})
 
 	t.Run("list", func(t *testing.T) {
