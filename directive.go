@@ -64,7 +64,7 @@ func (d *Directive) ToString() string {
 	case DirectiveTypeList:
 		{
 			for i := 0; i < len(d.List); i++ {
-				// TODO: user prefered line breal code
+				// TODO: user prefered line break code
 				dataLn := string(LF)
 				tailLn := string(LF)
 				if i == len(d.List)-1 {
@@ -112,7 +112,8 @@ func readLine(buffer *bytes.Buffer) (line []byte, err error) {
 			break
 		}
 		line = append(line, b)
-		// TODO: prpoperly include CRLF
+		// CRLF can be ignored under parsing data structure
+		// It only should be considered under parsing multi line text
 		if b == CR || b == LF {
 			break
 		}
@@ -267,7 +268,6 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 				d.Text = append(d.Text, "")
 			} else if currentLine[nextIndex+1] == CR || currentLine[nextIndex+1] == LF {
 				// text symbol with no space
-				// TODO: CRLF case
 				d.Text = append(d.Text, string(currentLine[nextIndex+1]))
 			} else {
 				// after text symbol(>) and space
@@ -282,8 +282,16 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 			return nil, hasNext, nil
 		}
 
+		lastLine := currentLine
 		if currentLine, err = readLine(buffer); err != nil && err != io.EOF {
 			return nil, hasNext, err
+		}
+
+		// CRLF
+		if len(currentLine) == 1 && currentLine[0] == LF {
+			if len(d.Text) > 0 && lastLine[len(lastLine) - 1] == CR {
+				d.Text[len(d.Text) - 1] += string(LF)
+			}
 		}
 	}
 
@@ -498,10 +506,18 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		}
 	} else {
 		for eof := false; !eof; {
+			lastLine := currentLine
 			if currentLine, err = readLine(buffer); err == io.EOF {
 				eof = true
 			} else if err != nil {
 				return nil, hasNext, err
+			}
+
+			// CRLF
+			if len(currentLine) == 1 && currentLine[0] == LF {
+				if len(lastLine) > 0 && lastLine[len(lastLine) - 1] == CR {
+					elementContent = append(elementContent, currentLine[0])
+				}
 			}
 
 			char, nextIndex := readFirstMeaningfulCharacter(currentLine, true)
