@@ -76,6 +76,7 @@ func (d *Directive) ToString() string {
 					dataLn = ""
 				}
 
+				// TODO: linear recursion
 				str = fmt.Sprintf("%s%s- %s%s%s", str, baseIndent, dataLn, child.ToString(), tailLn)
 			}
 		}
@@ -621,69 +622,32 @@ func removeBytesTrailingLineBreaks(b *[]byte) {
 	}
 }
 
-func trimQuotedBytes(data *[]byte) error {
-	for i, b := range *data {
-		if b == DoubleQuote || b == Quote {
-			for ri := len(*data) - 1; ri > i; ri-- {
-				rb := (*data)[ri]
-
-				if rb == b {
-					*data = (*data)[i + 1 : ri-1]
-					return nil
-				}
-
-				if (rb == Quote && b == DoubleQuote) || (rb == DoubleQuote && b == Quote) {
-					return DictionaryKeyWithUnpairedQuotes
-				}
-			}
-			return DictionaryKeyWithUnpairedQuotes
-		}
-	}
-	return nil
-}
-
 func sanitizeDictionaryKey(key *[]byte) error {
-	quoted := false
-
 	keyLen := len(*key)
+
+	index := len(*key) - 1
+	trimSize := 0
+
+	// remove trailing space
+	for index >= 0 {
+		if unicode.IsSpace(rune((*key)[index])) {
+			trimSize++
+		} else {
+			break
+		}
+		index--
+	}
+
+	*key = (*key)[:len(*key)-trimSize]
+	keyLen = len(*key)
 
 	// remove sorrounding quotes
 	if keyLen >= 2 {
 		if ((*key)[0] == DoubleQuote && (*key)[keyLen-1] == DoubleQuote) || ((*key)[0] == Quote && (*key)[keyLen-1] == Quote) {
-			quoted = true
+			//quoted = true
 			*key = (*key)[1 : keyLen-1]
 			keyLen = len(*key)
-
-			workKey := make([]byte, keyLen)
-			copy(workKey, *key)
-
-			for {
-				beforeLen := len(workKey)
-				if err := trimQuotedBytes(&workKey); err != nil {
-					return err
-				}
-				if len(workKey) == beforeLen {
-					break
-				}
-			}
 		}
-	}
-
-	// remove trailing space
-	if !quoted {
-		index := len(*key) - 1
-		trimSize := 0
-
-		for index >= 0 {
-			if unicode.IsSpace(rune((*key)[index])) {
-				trimSize++
-			} else {
-				break
-			}
-			index--
-		}
-
-		*key = (*key)[:len(*key)-trimSize]
 	}
 
 	return nil
@@ -718,52 +682,60 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
  * Specifiaction:
  *   dictionary key is inspected with the following rules;
  *   1. line starts with a symbol of multi line text (>), list (-) and comment (#) with trailing space, are not inspected
- *   2. line with colon, the key separator symbol (:) with trailing space is subject to search dictionary key
- *   3. colon must be outside of quotes, otherwise it is not considered as key separator
- *   4. bytes from first meaningful character to the index before colon are considered as key
+ *   2. line with the dictionary key delimiter symbol (':') is subject to search dictionary key
+ *   3. treat delimiter inside of quotes as a part of key
+ *   4. quotes detection is prior to delimiter detection
+ *   5. bytes from first meaningful character to the index before delimiter are considered as key
  *
  * This function expects line that is already considerd as dictionary.
  * So the test of first meaningful character is skipped.
  */
 func detectKeyBytes(line []byte) ([]byte, int) {
-	index := 0
 	var char byte
 
 	meaningfulIndex := NotFoundIndex
+	quoteClosingIndex := NotFoundIndex
+	delimiterBeginIndex := NotFoundIndex
+	delimiterEndIndex := NotFoundIndex
 	quote := EmptyChar
 
-	for index < len(line) {
+	// 4.
+	for index := 0; index < len(line); index++ {
 		char = line[index]
 
-		if (char == Quote || char == DoubleQuote) && char == quote {
-			quote = EmptyChar
+		if quote != EmptyChar && char == quote {
+			quoteClosingIndex = index
 		}
-
 		// 3.
 		if meaningfulIndex == NotFoundIndex && !unicode.IsSpace(rune(char)) {
 			meaningfulIndex = index
-			if quote == EmptyChar && (char == Quote || char == DoubleQuote) {
+			if char == Quote || char == DoubleQuote {
 				quote = char
 			}
 		}
-
-		if DictionaryKeySeparator == char && quote == EmptyChar {
-			if index < (len(line) - 1) {
-				// 2.
-				if unicode.IsSpace(rune(line[index+1])) {
-					// 4.
-					return line[meaningfulIndex:index], index + 2
+		// 2.
+		if char == DictionaryKeySeparator {
+			if index > quoteClosingIndex && (delimiterBeginIndex == NotFoundIndex || delimiterBeginIndex < quoteClosingIndex) {
+				// ':' with line break
+				if index >= (len(line) - 1) {
+					delimiterBeginIndex = index
+					delimiterEndIndex = index + 1
+				} else {
+					// ':' with space
+					if unicode.IsSpace(rune(line[index+1])) {
+						delimiterBeginIndex = index
+						delimiterEndIndex = index + 2
+					}
 				}
-			} else {
-				// 4.
-				return line[meaningfulIndex:index], index + 1
 			}
 		}
-
-		index++
 	}
 
-	return nil, NotFoundIndex
+	if delimiterBeginIndex == NotFoundIndex {
+		return nil, NotFoundIndex
+	}
+	// 5.
+	return line[meaningfulIndex:delimiterBeginIndex], delimiterEndIndex
 }
 
 func getDictionarySeparatorIndex(line []byte) int {

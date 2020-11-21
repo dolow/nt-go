@@ -871,44 +871,84 @@ func TestDictionary(t *testing.T) {
 		assert.Nil(t, err)
 
 		var value *Directive
-		value, _ = directive.Dictionary["key1"]
-		assert.Equal(t, "value 1", value.String)
-		value, _ = directive.Dictionary["key2"]
-		assert.Equal(t, "value 2", value.String)
-		value, _ = directive.Dictionary["key 3"]
-		assert.Equal(t, "value 3", value.String)
-		value, _ = directive.Dictionary["key 4"]
-		assert.Equal(t, "value 4", value.String)
-		value, _ = directive.Dictionary["key5"]
-		assert.Equal(t, "", value.String)
-		value, _ = directive.Dictionary["key6"]
-		assert.Equal(t, "", value.String)
-		value, _ = directive.Dictionary[" key7 "]
-		assert.Equal(t, "value 7", value.String)
-		value, _ = directive.Dictionary[" key8 "]
-		assert.Equal(t, "value 8", value.String)
-		value, _ = directive.Dictionary[" ' key9 ' "]
-		assert.Equal(t, "value 9", value.String)
-		value, _ = directive.Dictionary[" \" key10 \" "]
-		assert.Equal(t, "value 10", value.String)
-		//value, _ = directive.Dictionary[" \" key11: \" "]
-		//assert.Equal(t, "value 11", value.String)
-		//value, _ = directive.Dictionary[" \" key12 : \" "]
-		//assert.Equal(t, "value 12", value.String)
-		//value, _ = directive.Dictionary[" \" key13: "]
-		//assert.Equal(t, "value 13", value.String)
-		//value, _ = directive.Dictionary[" \" key14 : "]
-		//assert.Equal(t, "value 14", value.String)
-		//value, _ = directive.Dictionary[" ' key15': "]
-		//assert.Equal(t, "value 15", value.String)
-		//value, _ = directive.Dictionary[" ' key16' : "]
-		//assert.Equal(t, "value 16", value.String)
-		value, _ = directive.Dictionary[""]
-		assert.Equal(t, "value 17", value.String)
-		//value, _ = directive.Dictionary[" ' key18\"' : "]
-		//assert.Equal(t, "value 18", value.String)
-		//value, _ = directive.Dictionary[" \" key19'\" : "]
-		//assert.Equal(t, "value 19", value.String)
+
+		t.Run("dict_23_1", func(t *testing.T) {
+			value, _ = directive.Dictionary["key1"]
+			assert.Equal(t, "value 1", value.String)
+		})
+		t.Run("dict_23_2", func(t *testing.T) {
+			value, _ = directive.Dictionary["key2"]
+			assert.Equal(t, "value 2", value.String)
+		})
+		t.Run("dict_23_3", func(t *testing.T) {
+			value, _ = directive.Dictionary["key 3"]
+			assert.Equal(t, "value 3", value.String)
+		})
+		t.Run("dict_23_4", func(t *testing.T) {
+			value, _ = directive.Dictionary["key 4"]
+			assert.Equal(t, "value 4", value.String)
+		})
+		t.Run("dict_23_5", func(t *testing.T) {
+			value, _ = directive.Dictionary["key5"]
+			assert.Equal(t, "", value.String)
+		})
+		t.Run("dict_23_6", func(t *testing.T) {
+			value, _ = directive.Dictionary["key6"]
+			assert.Equal(t, "", value.String)
+		})
+		t.Run("dict_23_7", func(t *testing.T) {
+			value, _ = directive.Dictionary[" key7 "]
+			assert.Equal(t, "value 7", value.String)
+		})
+		t.Run("dict_23_8", func(t *testing.T) {
+			value, _ = directive.Dictionary[" key8 "]
+			assert.Equal(t, "value 8", value.String)
+		})
+		t.Run("dict_23_9", func(t *testing.T) {
+			value, _ = directive.Dictionary[" ' key9 ' "]
+			assert.Equal(t, "value 9", value.String)
+		})
+		t.Run("dict_23_10", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key10 \" "]
+			assert.Equal(t, "value 10", value.String)
+		})
+		t.Run("dict_23_11", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key11: \" "]
+			assert.Equal(t, "value 11", value.String)
+		})
+		t.Run("dict_23_12", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key12 : \" "]
+			assert.Equal(t, "value 12", value.String)
+		})
+		t.Run("dict_23_13", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key13: "]
+			assert.Equal(t, "value 13", value.String)
+		})
+		t.Run("dict_23_14", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key14 : "]
+			assert.Equal(t, "value 14", value.String)
+		})
+		t.Run("dict_23_15", func(t *testing.T) {
+			value, _ = directive.Dictionary[" ' key15': "]
+			assert.Equal(t, "value 15", value.String)
+		})
+		t.Run("dict_23_16", func(t *testing.T) {
+			value, _ = directive.Dictionary[" ' key16' : "]
+			assert.Equal(t, "value 16", value.String)
+		})
+		t.Run("dict_23_17", func(t *testing.T) {
+			value, _ = directive.Dictionary[""]
+			assert.Equal(t, "value 17", value.String)
+		})
+		t.Run("dict_23_18", func(t *testing.T) {
+			value, _ = directive.Dictionary[" ' key18\"' : "]
+			assert.Equal(t, "value 18", value.String)
+		})
+		t.Run("dict_23_19", func(t *testing.T) {
+			value, _ = directive.Dictionary[" \" key19'\" : "]
+			assert.Equal(t, "value 19", value.String)
+		})
+
 	})
 	t.Run("dict_24", func(t *testing.T) {
 		// json input
