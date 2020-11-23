@@ -641,7 +641,7 @@ func sanitizeDictionaryKey(key *[]byte) error {
 	*key = (*key)[:len(*key)-trimSize]
 	keyLen = len(*key)
 
-	// remove sorrounding quotes
+	// remove surrounding quotes
 	if keyLen >= 2 {
 		if ((*key)[0] == DoubleQuote && (*key)[keyLen-1] == DoubleQuote) || ((*key)[0] == Quote && (*key)[keyLen-1] == Quote) {
 			*key = (*key)[1 : keyLen-1]
