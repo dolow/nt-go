@@ -17,6 +17,9 @@ const (
 	NotFoundIndex int  = -1
 
 	MarshallerTag = "nt"
+	MarshallerTagSeparator = ","
+	MarshallerTagMultilineText = "multilinetext"
+	UnmarshalDefaultIndentSize = 2
 )
 
 type MultiLineText []string

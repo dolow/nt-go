@@ -8,6 +8,7 @@ import (
 
 const Sample = `
 string: hello
+string_ptr: world
 text:
   > aaaa
   > bbbb
@@ -72,7 +73,7 @@ list_string:
 
 type SampleDict struct {
 	DictString string   `nt:"dict_string"`
-	DictText   MultiLineText `nt:"dict_text"`
+	DictText   MultiLineText `nt:"dict_text,multilinetext"`
 }
 
 type SampleListElement struct {
@@ -81,19 +82,20 @@ type SampleListElement struct {
 
 type SampleStruct struct {
 	String string `nt:"string"`
+	StringPointer *string `nt:"string_ptr"`
 
-	Text      []string    `nt:"text"`
-	TextAlias MultiLineText `nt:"text_alias"`
+	Text      []string    `nt:"text,multilinetext"`
+	TextAlias MultiLineText `nt:"text_alias,multilinetext"`
 
 	Dict          SampleDict  `nt:"dict"`
 	DictOfPointer *SampleDict `nt:"dict_ptr"`
 
-	ListOfStruct              []SampleListElement   `nt:"list_struct"`
-	ListOfStructPointer       []*SampleListElement  `nt:"list_ptr"`
-	ListOfListOfStruct        [][]SampleListElement `nt:"list_of_list_struct"`
-	ListOfListOfStructPointer [][]SampleListElement `nt:"list_of_list_struct_pointer"`
-	ListOfText                []MultiLineText       `nt:"list_text"`
-	ListOfString              []string              `nt:"list_string"`
+	ListOfStruct              []SampleListElement    `nt:"list_struct"`
+	ListOfStructPointer       []*SampleListElement   `nt:"list_ptr"`
+	ListOfListOfStruct        [][]SampleListElement  `nt:"list_of_list_struct"`
+	ListOfListOfStructPointer [][]*SampleListElement `nt:"list_of_list_struct_pointer"`
+	ListOfText                []MultiLineText        `nt:"list_text,multilinetext"`
+	ListOfString              []string               `nt:"list_string"`
 
 	NoTag string
 }
@@ -181,5 +183,210 @@ func TestMarshal(t *testing.T) {
 
 		assert.Equal(t, "list string aaaa", s.ListOfString[0])
 		assert.Equal(t, "list string bbbb", s.ListOfString[1])
+	})
+}
+
+type StringStruct struct {
+	MultilineString string `nt:"key"`
+}
+
+func TestUnmarshal(t *testing.T) {
+
+	subject := func() string {
+		ptr := "str pointer value"
+		s := SampleStruct{
+			String: "str value",
+			StringPointer: &ptr,
+			Text: []string{
+				"text value 1",
+				"text value 2",
+			},
+			TextAlias: []string{
+				"text alias value 1",
+				"text alias value 2",
+			},
+			Dict: SampleDict{
+				DictString: "dict string value",
+				DictText: MultiLineText{
+					"dict text value 1",
+					"dict text value 2",
+				},
+			},
+			DictOfPointer: &SampleDict{
+				DictString: "dict pointer string value",
+				DictText: MultiLineText{
+					"dict pointer text value 1",
+					"dict pointer text value 2",
+				},
+			},
+			ListOfStruct: []SampleListElement{
+				SampleListElement{
+					ListString: "list str 1",
+				},
+				SampleListElement{
+					ListString: "list str 2",
+				},
+			},
+			ListOfStructPointer: []*SampleListElement{
+				&SampleListElement{
+					ListString: "list pointer str 1",
+				},
+				&SampleListElement{
+					ListString: "list pointer str 2",
+				},
+			},
+			ListOfListOfStruct: [][]SampleListElement{
+				[]SampleListElement{
+					SampleListElement{
+						ListString: "list of list str 1",
+					},
+					SampleListElement{
+						ListString: "list of list str 2",
+					},
+				},
+				[]SampleListElement{
+					SampleListElement{
+						ListString: "list of list str 3",
+					},
+					SampleListElement{
+						ListString: "list of list str 4",
+					},
+				},
+			},
+			ListOfListOfStructPointer: [][]*SampleListElement{
+				[]*SampleListElement{
+					&SampleListElement{
+						ListString: "list of list pointer str 1",
+					},
+					&SampleListElement{
+						ListString: "list of list pointer str 2",
+					},
+				},
+				[]*SampleListElement{
+					&SampleListElement{
+						ListString: "list of list pointer str 3",
+					},
+					&SampleListElement{
+						ListString: "list of list pointer str 4",
+					},
+				},
+			},
+			ListOfText: []MultiLineText {
+				MultiLineText{
+					"list of text 1",
+					"list of text 2",
+				},
+				MultiLineText{
+					"list of text 3",
+					"list of text 4",
+				},
+			},
+			ListOfString: []string {
+				"list of str 1",
+				"list of str 2",
+			},
+		}
+		return Unmarshal(s)
+	}
+
+
+	expect := `string: str value
+string_ptr: str pointer value
+text:
+  > text value 1
+  > text value 2
+text_alias:
+  > text alias value 1
+  > text alias value 2
+dict:
+  dict_string: dict string value
+  dict_text:
+    > dict text value 1
+    > dict text value 2
+dict_ptr:
+  dict_string: dict pointer string value
+  dict_text:
+    > dict pointer text value 1
+    > dict pointer text value 2
+list_struct:
+  -
+    list_string: list str 1
+  -
+    list_string: list str 2
+list_ptr:
+  -
+    list_string: list pointer str 1
+  -
+    list_string: list pointer str 2
+list_of_list_struct:
+  -
+    -
+      list_string: list of list str 1
+    -
+      list_string: list of list str 2
+  -
+    -
+      list_string: list of list str 3
+    -
+      list_string: list of list str 4
+list_of_list_struct_pointer:
+  -
+    -
+      list_string: list of list pointer str 1
+    -
+      list_string: list of list pointer str 2
+  -
+    -
+      list_string: list of list pointer str 3
+    -
+      list_string: list of list pointer str 4
+list_text:
+  -
+    > list of text 1
+    > list of text 2
+  -
+    > list of text 3
+    > list of text 4
+list_string:
+  - list of str 1
+  - list of str 2
+`
+
+	t.Run("holistic", func(t *testing.T) {
+		s := subject()
+
+		assert.Equal(t, expect, s)
+	})
+
+	t.Run("string contains linebreak", func(t *testing.T) {
+		s := StringStruct{ "line1\nline2" }
+
+		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
+			ret := Unmarshal(s)
+			assert.Equal(t, "key:\n  > line1\n  > line2", ret)
+		})
+	})
+}
+
+func TestCreateIndent(t *testing.T) {
+	depth := 0
+	subject := func() string {
+		return createIndent(depth)
+	}
+	t.Run("depth 0", func(t *testing.T) {
+		depth = 0
+		assert.Equal(t, "", subject())
+	})
+	t.Run("depth 1", func(t *testing.T) {
+		depth = 1
+		assert.Equal(t, "  ", subject())
+	})
+	t.Run("depth 2", func(t *testing.T) {
+		depth = 2
+		assert.Equal(t, "    ", subject())
+	})
+	t.Run("depth 3", func(t *testing.T) {
+		depth = 3
+		assert.Equal(t, "      ", subject())
 	})
 }
