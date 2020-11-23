@@ -37,49 +37,40 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	case reflect.String:
 		{
 			// multiline text
-			work := *ref
 			if directive.Type == DirectiveTypeText {
 				for _, line := range directive.Text {
-					work = reflect.Append(work, reflect.ValueOf(line))
+					*ref = reflect.Append(*ref, reflect.ValueOf(line))
 				}
 			} else if directive.Type == DirectiveTypeList {
 				for _, child := range directive.List {
-					work = reflect.Append(work, reflect.ValueOf(child.String))
+					*ref = reflect.Append(*ref, reflect.ValueOf(child.String))
 				}
 			}
-			ref.Set(work)
 		}
 	case reflect.Slice:
 		{
-			work := *ref
 			for _, child := range directive.List {
-				elementInstance := reflect.New(typ).Elem()
-				marshalSlice(child, typ.Elem(), &elementInstance)
-				work = reflect.Append(work, elementInstance)
+				childWork := reflect.MakeSlice(typ, 0, cap(child.List))
+				marshalSlice(child, typ.Elem(), &childWork)
+				*ref = reflect.Append(*ref, childWork)
 			}
-			ref.Set(work)
 		}
 	case reflect.Struct:
 		{
-			work := *ref
 			for _, child := range directive.List {
 				elementInstance := reflect.New(typ).Elem()
 				marshal(child, typ, &elementInstance)
-				work = reflect.Append(work, elementInstance)
+				*ref = reflect.Append(*ref, elementInstance)
 			}
-			ref.Set(work)
-
 		}
 	case reflect.Ptr:
 		{
-			work := *ref
 			for _, child := range directive.List {
 				elementType := typ.Elem()
 				elementInstance := reflect.New(elementType)
 				marshal(child, elementType, &elementInstance)
-				work = reflect.Append(work, elementInstance)
+				*ref = reflect.Append(*ref, elementInstance)
 			}
-			ref.Set(work)
 		}
 	}
 }
@@ -116,8 +107,9 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 			}
 		case reflect.Slice:
 			{
-				// type of slice element
-				marshalSlice(childDirective, fieldType.Elem(), &fieldRef)
+				work := reflect.MakeSlice(fieldRef.Type(), 0, cap(childDirective.List))
+				marshalSlice(childDirective, fieldType.Elem(), &work)
+				fieldRef.Set(work)
 			}
 		case reflect.Struct:
 			{
