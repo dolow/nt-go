@@ -28,7 +28,9 @@ func Unmarshal(v interface{}) string {
 	value := reflect.ValueOf(v)
 	typ := reflect.TypeOf(v)
 
-	return unmarshal(typ, &value, 0, nil)
+	result, _ := unmarshal(typ, &value, 0, 0)
+
+	return result
 }
 
 func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
@@ -37,13 +39,20 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	case reflect.String:
 		{
 			// multiline text
-			if directive.Type == DirectiveTypeText {
-				for _, line := range directive.Text {
-					*ref = reflect.Append(*ref, reflect.ValueOf(line))
+			switch directive.Type {
+			case DirectiveTypeString:
+				*ref = reflect.Append(*ref, reflect.ValueOf(directive.String))
+			case DirectiveTypeText:
+				{
+					for _, line := range directive.Text {
+						*ref = reflect.Append(*ref, reflect.ValueOf(line))
+					}
 				}
-			} else if directive.Type == DirectiveTypeList {
-				for _, child := range directive.List {
-					*ref = reflect.Append(*ref, reflect.ValueOf(child.String))
+			case DirectiveTypeList:
+				{
+					for _, child := range directive.List {
+						*ref = reflect.Append(*ref, reflect.ValueOf(child.String))
+					}
 				}
 			}
 		}
@@ -103,7 +112,11 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		switch fieldType.Kind() {
 		case reflect.String:
 			{
-				fieldRef.SetString(childDirective.String)
+				if childDirective.Type == DirectiveTypeText {
+					fieldRef.SetString(strings.Join(childDirective.Text, ""))
+				} else {
+					fieldRef.SetString(childDirective.String)
+				}
 			}
 		case reflect.Slice:
 			{
@@ -133,21 +146,24 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	}
 }
 
-func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []string) string {
+func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (string, bool) {
 
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return fmt.Sprintf("%d%s", ref.Int(), string(LF))
+		return fmt.Sprintf("%d%s", ref.Int(), string(LF)), true
 	case reflect.String:
 		var value string
 		if ref.Kind() == reflect.Ptr {
+			if ref.IsNil() {
+				return "", false
+			}
 			value = ref.Elem().String()
 		} else {
 			value = ref.String()
 		}
 		lines := strings.Split(value, string(LF))
 		if len(lines) == 1 {
-			return fmt.Sprintf("%s%s", value, string(LF))
+			return fmt.Sprintf("%s%s", value, string(LF)), value != ""
 		}
 
 		result := ""
@@ -158,7 +174,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 				result += fmt.Sprintf("%s%s %s%s", createIndent(depth), string(TextSymbol), line, string(LF))
 			}
 		}
-		return result
+		return result, true
 	case reflect.Slice:
 		{
 			var result string
@@ -171,13 +187,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 				lineBreakAfterKey = string(Space)
 			case reflect.String:
 				lineBreakAfterKey = string(Space)
-				if tagOption != nil {
-					for i := 1; i < len(tagOption); i++ {
-						if tagOption[i] == MarshallerTagMultilineText {
-							directiveSymbol = TextSymbol
-							break
-						}
-					}
+				if (tagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+					directiveSymbol = TextSymbol
 				}
 			default:
 				lineBreakAfterKey = string(LF)
@@ -186,15 +197,18 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 			for i := 0; i < ref.Len(); i++ {
 				childRef := ref.Index(i)
 
-				childContent := unmarshal(sliceType, &childRef, depth + 1, tagOption)
+				childContent, _ := unmarshal(sliceType, &childRef, depth + 1, tagFlag)
 				result += fmt.Sprintf("%s%s%s%s", createIndent(depth), string(directiveSymbol), lineBreakAfterKey, childContent)
 			}
-			return result
+			return result, ref.Len() > 0
 		}
 	case reflect.Struct:
 		{
 			substance := *ref
 			if ref.Type().Kind() == reflect.Ptr {
+				if substance.IsNil() {
+					return "", false
+				}
 				substance = ref.Elem()
 			}
 			var result string
@@ -210,6 +224,16 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 				tagValues := strings.Split(tagValue, MarshallerTagSeparator)
 				key := tagValues[0]
 
+				childTagFlag := 0
+				for i := 1; i < len(tagValues); i++ {
+					switch tagValues[i] {
+					case MarshallerTagMultilineText:
+						childTagFlag |= MarshallerTagFlagMultilineText
+					case MarshallerTagOmitEmpty:
+						childTagFlag |= MarshallerTagFlagOmitEmpty
+					}
+				}
+
 				var lineBreakAfterKey string
 
 				switch fieldType.Kind() {
@@ -222,11 +246,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 					if len(lines) > 1 {
 						lineBreakAfterKey = string(LF)
 					} else {
-						for i := 1; i < len(tagValues); i++ {
-							if tagValues[i] == MarshallerTagMultilineText {
-								lineBreakAfterKey = string(LF)
-								break
-							}
+						if (childTagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+							lineBreakAfterKey = string(LF)
 						}
 					}
 				case reflect.Ptr:
@@ -237,11 +258,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 						if len(lines) > 1 {
 							lineBreakAfterKey = string(LF)
 						} else {
-							for i := 1; i < len(tagValues); i++ {
-								if tagValues[i] == MarshallerTagMultilineText {
-									lineBreakAfterKey = string(LF)
-									break
-								}
+							if (childTagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+								lineBreakAfterKey = string(LF)
 							}
 						}
 					} else {
@@ -251,17 +269,28 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagOption []stri
 					lineBreakAfterKey = string(LF)
 				}
 
-				marshalizedValue := unmarshal(fieldType, &fieldRef, depth + 1, tagValues)
+				marshalizedValue, exists := unmarshal(fieldType, &fieldRef, depth + 1, childTagFlag)
+				if key == "key1" {
+					fmt.Println(marshalizedValue)
+				}
+				if !exists && ((childTagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty) {
+					continue
+				}
 				result += fmt.Sprintf("%s%s:%s%s", createIndent(depth), key, lineBreakAfterKey, marshalizedValue)
 			}
-			return result
+			return result, true
 		}
 	case reflect.Ptr:
 		{
-			return unmarshal(typ.Elem(), ref, depth, nil)
+			if ref.IsNil() {
+				if (tagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty {
+					return "", false
+				}
+			}
+			return unmarshal(typ.Elem(), ref, depth, 0)
 		}
 	}
-	return ""
+	return "", false
 }
 
 func createIndent(depth int) string {

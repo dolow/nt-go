@@ -18,8 +18,12 @@ const (
 
 	MarshallerTag = "nt"
 	MarshallerTagSeparator = ","
+	MarshallerTagOmitEmpty = "omitempty"
 	MarshallerTagMultilineText = "multilinetext"
 	UnmarshalDefaultIndentSize = 2
+
+	MarshallerTagFlagOmitEmpty = 1
+	MarshallerTagFlagMultilineText = 1 << 1
 )
 
 type MultiLineText []string

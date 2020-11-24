@@ -97,6 +97,9 @@ type SampleStruct struct {
 	ListOfText                []MultiLineText        `nt:"list_text,multilinetext"`
 	ListOfString              []string               `nt:"list_string"`
 
+	OmitEmptyString string `nt:"omit_string,omitempty"`
+	NotOmitEmptyString string `nt:"not_omit_string"`
+
 	NoTag string
 }
 
@@ -184,10 +187,38 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, "list string aaaa", s.ListOfString[0])
 		assert.Equal(t, "list string bbbb", s.ListOfString[1])
 	})
+
+	t.Run("holistic", func(t *testing.T) {
+		HolisticSample := `
+string:
+  > str with
+  > line break
+text: one liner text
+`
+		subject = func() *SampleStruct {
+			s := &SampleStruct{}
+			Marshal(HolisticSample, s)
+			return s
+		}
+
+		t.Run("should join multi line text into string", func(t *testing.T) {
+			s := subject()
+			assert.Equal(t, "str with\nline break", s.String)
+		})
+		t.Run("should split string into string slice", func(t *testing.T) {
+			s := subject()
+			assert.Equal(t, 1, len(s.Text))
+			assert.Equal(t, "one liner text", s.Text[0])
+		})
+	})
 }
 
 type StringStruct struct {
 	MultilineString string `nt:"key"`
+}
+type RefStruct struct {
+	RefString1 *string `nt:"key1"`
+	RefString2 *string `nt:"key2,omitempty"`
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -350,6 +381,7 @@ list_text:
 list_string:
   - list of str 1
   - list of str 2
+not_omit_string: 
 `
 
 	t.Run("holistic", func(t *testing.T) {
@@ -364,6 +396,15 @@ list_string:
 		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
 			ret := Unmarshal(s)
 			assert.Equal(t, "key:\n  > line1\n  > line2", ret)
+		})
+	})
+
+	t.Run("pointer value is nil", func(t *testing.T) {
+		s := RefStruct{ nil, nil }
+
+		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
+			ret := Unmarshal(s)
+			assert.Equal(t, "key1: ", ret)
 		})
 	})
 }
