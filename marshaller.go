@@ -270,9 +270,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				}
 
 				marshalizedValue, exists := unmarshal(fieldType, &fieldRef, depth + 1, childTagFlag)
-				if key == "key1" {
-					fmt.Println(marshalizedValue)
-				}
+
 				if !exists && ((childTagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty) {
 					continue
 				}
