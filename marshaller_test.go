@@ -409,25 +409,3 @@ not_omit_string:
 	})
 }
 
-func TestCreateIndent(t *testing.T) {
-	depth := 0
-	subject := func() string {
-		return createIndent(depth)
-	}
-	t.Run("depth 0", func(t *testing.T) {
-		depth = 0
-		assert.Equal(t, "", subject())
-	})
-	t.Run("depth 1", func(t *testing.T) {
-		depth = 1
-		assert.Equal(t, "  ", subject())
-	})
-	t.Run("depth 2", func(t *testing.T) {
-		depth = 2
-		assert.Equal(t, "    ", subject())
-	})
-	t.Run("depth 3", func(t *testing.T) {
-		depth = 3
-		assert.Equal(t, "      ", subject())
-	})
-}

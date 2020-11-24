@@ -169,9 +169,9 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		result := ""
 		for i, line := range lines {
 			if i == len(lines) - 1 {
-				result += fmt.Sprintf("%s%s %s", createIndent(depth), string(TextSymbol), line)
+				result += fmt.Sprintf("%s%s %s", fmt.Sprintf("%*s", depth * UnmarshalDefaultIndentSize, ""), string(TextSymbol), line)
 			} else {
-				result += fmt.Sprintf("%s%s %s%s", createIndent(depth), string(TextSymbol), line, string(LF))
+				result += fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth * UnmarshalDefaultIndentSize, ""), string(TextSymbol), line, string(LF))
 			}
 		}
 		return result, true
@@ -198,7 +198,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				childRef := ref.Index(i)
 
 				childContent, _ := unmarshal(sliceType, &childRef, depth + 1, tagFlag)
-				result += fmt.Sprintf("%s%s%s%s", createIndent(depth), string(directiveSymbol), lineBreakAfterKey, childContent)
+				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth * UnmarshalDefaultIndentSize, ""), string(directiveSymbol), lineBreakAfterKey, childContent)
 			}
 			return result, ref.Len() > 0
 		}
@@ -276,7 +276,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				if !exists && ((childTagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty) {
 					continue
 				}
-				result += fmt.Sprintf("%s%s:%s%s", createIndent(depth), key, lineBreakAfterKey, marshalizedValue)
+				result += fmt.Sprintf("%s%s:%s%s", fmt.Sprintf("%*s", depth * UnmarshalDefaultIndentSize, ""), key, lineBreakAfterKey, marshalizedValue)
 			}
 			return result, true
 		}
@@ -291,16 +291,4 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		}
 	}
 	return "", false
-}
-
-func createIndent(depth int) string {
-	indent := make([]byte, depth * UnmarshalDefaultIndentSize)
-
-	for i := 0; i < depth; i++ {
-		for j := 0; j < UnmarshalDefaultIndentSize; j++ {
-			indent[i*UnmarshalDefaultIndentSize+j] = Space
-		}
-	}
-
-	return string(indent)
 }
