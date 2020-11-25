@@ -6,9 +6,7 @@ jobs:
   build:
     docker:
       # specify the version
-      - image: circleci/golang:1.9
-    environment:
-      GO111MODULE: "on"
+      - image: circleci/golang:1.15
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
     #### expecting it in the form of
@@ -18,6 +16,6 @@ jobs:
     steps:
       - checkout
 
-      - run: go build
+      - run: go mod download
       - run: go test -v .
 
