@@ -288,15 +288,17 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 			return nil, hasNext, nil
 		}
 
-		lastLine := currentLine
 		if currentLine, err = readLine(buffer); err != nil && err != io.EOF {
 			return nil, hasNext, err
 		}
 
 		// CRLF
 		if len(currentLine) == 1 && currentLine[0] == LF {
-			if len(d.Text) > 0 && lastLine[len(lastLine) - 1] == CR {
-				d.Text[len(d.Text) - 1] += string(LF)
+			if len(d.Text) > 0 {
+				lastLine := d.Text[len(d.Text) - 1]
+				if lastLine[len(lastLine) - 1] == CR {
+					lastLine += string(LF)
+				}
 			}
 		}
 	}
