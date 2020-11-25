@@ -224,15 +224,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				tagValues := strings.Split(tagValue, MarshallerTagSeparator)
 				key := tagValues[0]
 
-				childTagFlag := 0
-				for i := 1; i < len(tagValues); i++ {
-					switch tagValues[i] {
-					case MarshallerTagMultilineText:
-						childTagFlag |= MarshallerTagFlagMultilineText
-					case MarshallerTagOmitEmpty:
-						childTagFlag |= MarshallerTagFlagOmitEmpty
-					}
-				}
+				childTagFlag := getTagFlagFromTagValue(tagValues)
 
 				var lineBreakAfterKey string
 
@@ -289,4 +281,17 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		}
 	}
 	return "", false
+}
+
+func getTagFlagFromTagValue(tagValues []string) (flag int) {
+	for i := 1; i < len(tagValues); i++ {
+		switch tagValues[i] {
+		case MarshallerTagMultilineText:
+			flag |= MarshallerTagFlagMultilineText
+		case MarshallerTagOmitEmpty:
+			flag |= MarshallerTagFlagOmitEmpty
+		}
+	}
+
+	return
 }
