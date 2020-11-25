@@ -1,3 +1,5 @@
+[![dolow](https://circleci.com/gh/dolow/nt-go.svg?style=svg)](https://app.circleci.com/pipelines/github/dolow/nt-go)
+
 # nt-go
 
 nt-go is a paraser for [NestedText](https://github.com/KenKundert/nestedtext) format.
