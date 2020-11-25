@@ -89,7 +89,6 @@ func Benchmark_Directive(b *testing.B) {
 		})
 	})
 
-
 	b.Run("ToString", func(b *testing.B) {
 		prepare := func(str string) *Directive {
 			content := []byte(str)

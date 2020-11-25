@@ -279,9 +279,9 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 		// CRLF
 		if len(currentLine) == 1 && currentLine[0] == LF {
 			if len(d.Text) > 0 {
-				lastLine := d.Text[len(d.Text) - 1]
-				if lastLine[len(lastLine) - 1] == CR {
-					d.Text[len(d.Text) - 1] += string(LF)
+				lastLine := d.Text[len(d.Text)-1]
+				if lastLine[len(lastLine)-1] == CR {
+					d.Text[len(d.Text)-1] += string(LF)
 				}
 			}
 		}
@@ -505,7 +505,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 
 			// CRLF
 			if len(currentLine) == 1 && currentLine[0] == LF {
-				if len(lastLine) > 0 && lastLine[len(lastLine) - 1] == CR {
+				if len(lastLine) > 0 && lastLine[len(lastLine)-1] == CR {
 					elementContent = append(elementContent, currentLine[0])
 				}
 			}
@@ -535,7 +535,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 			if len(levels) == 0 {
 				levels = append(levels, nextIndex)
 			} else {
-				if levels[len(levels) - 1] < nextIndex {
+				if levels[len(levels)-1] < nextIndex {
 					levels = append(levels, nextIndex)
 				} else {
 					found := false

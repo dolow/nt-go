@@ -72,7 +72,7 @@ list_string:
 // TODO: list with different elements that have differed schema
 
 type SampleDict struct {
-	DictString string   `nt:"dict_string"`
+	DictString string        `nt:"dict_string"`
 	DictText   MultiLineText `nt:"dict_text,multilinetext"`
 }
 
@@ -81,10 +81,10 @@ type SampleListElement struct {
 }
 
 type SampleStruct struct {
-	String string `nt:"string"`
+	String        string  `nt:"string"`
 	StringPointer *string `nt:"string_ptr"`
 
-	Text      []string    `nt:"text,multilinetext"`
+	Text      []string      `nt:"text,multilinetext"`
 	TextAlias MultiLineText `nt:"text_alias,multilinetext"`
 
 	Dict          SampleDict  `nt:"dict"`
@@ -97,7 +97,7 @@ type SampleStruct struct {
 	ListOfText                []MultiLineText        `nt:"list_text,multilinetext"`
 	ListOfString              []string               `nt:"list_string"`
 
-	OmitEmptyString string `nt:"omit_string,omitempty"`
+	OmitEmptyString    string `nt:"omit_string,omitempty"`
 	NotOmitEmptyString string `nt:"not_omit_string"`
 
 	NoTag string
@@ -226,7 +226,7 @@ func TestUnmarshal(t *testing.T) {
 	subject := func() string {
 		ptr := "str pointer value"
 		s := SampleStruct{
-			String: "str value",
+			String:        "str value",
 			StringPointer: &ptr,
 			Text: []string{
 				"text value 1",
@@ -302,7 +302,7 @@ func TestUnmarshal(t *testing.T) {
 					},
 				},
 			},
-			ListOfText: []MultiLineText {
+			ListOfText: []MultiLineText{
 				MultiLineText{
 					"list of text 1",
 					"list of text 2",
@@ -312,14 +312,13 @@ func TestUnmarshal(t *testing.T) {
 					"list of text 4",
 				},
 			},
-			ListOfString: []string {
+			ListOfString: []string{
 				"list of str 1",
 				"list of str 2",
 			},
 		}
 		return Unmarshal(s)
 	}
-
 
 	expect := `string: str value
 string_ptr: str pointer value
@@ -391,7 +390,7 @@ not_omit_string:
 	})
 
 	t.Run("string contains linebreak", func(t *testing.T) {
-		s := StringStruct{ "line1\nline2" }
+		s := StringStruct{"line1\nline2"}
 
 		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
 			ret := Unmarshal(s)
@@ -400,7 +399,7 @@ not_omit_string:
 	})
 
 	t.Run("pointer value is nil", func(t *testing.T) {
-		s := RefStruct{ nil, nil }
+		s := RefStruct{nil, nil}
 
 		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
 			ret := Unmarshal(s)
@@ -408,4 +407,3 @@ not_omit_string:
 		})
 	})
 }
-
