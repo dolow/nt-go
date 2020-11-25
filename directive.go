@@ -49,7 +49,13 @@ type Directive struct {
 func (d *Directive) ToString() string {
 	str := ""
 
+	if d.IndentSize <= 0 {
+		// default size
+		d.IndentSize = UnmarshalDefaultIndentSize
+	}
+
 	baseIndent := fmt.Sprintf("%*s", d.IndentSize*d.Depth, "")
+
 	switch d.Type {
 	case DirectiveTypeString:
 		str = d.String
@@ -64,11 +70,11 @@ func (d *Directive) ToString() string {
 
 			child := d.List[i]
 			if child.Type == DirectiveTypeString {
-				dataLn = ""
+				dataLn = string(Space)
 			}
 
 			// TODO: linear recursion
-			str = fmt.Sprintf("%s%s- %s%s\n", str, baseIndent, dataLn, child.ToString())
+			str = fmt.Sprintf("%s%s-%s%s\n", str, baseIndent, dataLn, child.ToString())
 		}
 	case DirectiveTypeDictionary:
 		it := 0
@@ -76,10 +82,10 @@ func (d *Directive) ToString() string {
 			dataLn := string(LF)
 
 			if v.Type == DirectiveTypeString {
-				dataLn = ""
+				dataLn = string(Space)
 			}
 
-			str = fmt.Sprintf("%s%s%s: %s%s\n", str, baseIndent, k, dataLn, v.ToString())
+			str = fmt.Sprintf("%s%s%s:%s%s\n", str, baseIndent, k, dataLn, v.ToString())
 
 			it++
 		}

@@ -2,6 +2,7 @@ package ntgo
 
 import (
 	"bytes"
+	"io/ioutil"
 	"fmt"
 	"strings"
 	"testing"
@@ -18,6 +19,46 @@ func TestParse(t *testing.T) {
 		err := directive.Parse(data)
 		return directive, err
 	}
+
+	t.Run("back and forth", func(t *testing.T) {
+		data, _ = ioutil.ReadFile("./sample/sample.nt")
+
+		t.Run("should keep same schema", func(t *testing.T) {
+			d, err := subject()
+
+			assert.Nil(t, err)
+			str := d.ToString()
+
+			another := &Directive{}
+			err = another.Parse([]byte(str))
+
+			var deepEqual func (*testing.T, *Directive, *Directive)
+
+			deepEqual = func (t *testing.T, d1 *Directive, d2 *Directive) {
+				switch d1.Type {
+				case DirectiveTypeString:
+					assert.Equal(t, d1.String, d2.String)
+				case DirectiveTypeText:
+					assert.Equal(t, len(d1.Text), len(d2.Text))
+					for i, _ := range d1.Text {
+						assert.Equal(t, d1.Text[i], d2.Text[i])
+					}
+				case DirectiveTypeList:
+					assert.Equal(t, len(d1.List), len(d2.List))
+					for i, _ := range d1.List {
+						deepEqual(t, d1.List[i], d2.List[i])
+					}
+				case DirectiveTypeDictionary:
+					assert.Equal(t, len(d1.Dictionary), len(d2.Dictionary))
+					for k, _ := range d1.Dictionary {
+						deepEqual(t, d1.Dictionary[k], d2.Dictionary[k])
+					}
+				}
+			}
+
+			deepEqual(t, d, another)
+		})
+	})
 
 	t.Run("string", func(t *testing.T) {
 
