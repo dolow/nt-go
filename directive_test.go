@@ -523,6 +523,27 @@ func TestParse(t *testing.T) {
 				assert.Equal(t, expectValue[1], directive.Dictionary[expectKey[1]].String)
 			})
 		})
+
+		t.Run("empty string", func(t *testing.T) {
+			t.Run("space after delimiter", func(t *testing.T) {
+				data = []byte("key1: \nkey2: ")
+				t.Run("should treat value as empty string", func(t *testing.T) {
+					directive, err := subject()
+					assert.Nil(t, err)
+					assert.Equal(t, "", directive.Dictionary["key1"].String)
+					assert.Equal(t, "", directive.Dictionary["key2"].String)
+				})
+			})
+			t.Run("no space after delimiter", func(t *testing.T) {
+				data = []byte("key1:\nkey2:")
+				t.Run("should treat value as empty string", func(t *testing.T) {
+					directive, err := subject()
+					assert.Nil(t, err)
+					assert.Equal(t, "", directive.Dictionary["key1"].String)
+					assert.Equal(t, "", directive.Dictionary["key2"].String)
+				})
+			})
+		})
 	})
 
 	t.Run("line breaks", func(t *testing.T) {
