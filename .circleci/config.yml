@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
 
-      - run: git submodule update --inite --recursive
+      - run: git submodule update --init --recursive
       - run: go mod download
       - run: go test -v .
 
