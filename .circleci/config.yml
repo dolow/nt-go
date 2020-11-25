@@ -29,5 +29,5 @@ jobs:
       - run: go mod download
       - run: go test -v -coverprofile=cov.out .
       - codecov/upload:
-        file: ./cov.out
+          file: ./cov.out
 
