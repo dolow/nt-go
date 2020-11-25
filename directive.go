@@ -66,10 +66,6 @@ func (d *Directive) ToString() string {
 			for i := 0; i < len(d.List); i++ {
 				// TODO: user prefered line break code
 				dataLn := string(LF)
-				tailLn := string(LF)
-				if i == len(d.List)-1 {
-					tailLn = ""
-				}
 
 				child := d.List[i]
 				if child.Type == DirectiveTypeString {
@@ -77,7 +73,7 @@ func (d *Directive) ToString() string {
 				}
 
 				// TODO: linear recursion
-				str = fmt.Sprintf("%s%s- %s%s%s", str, baseIndent, dataLn, child.ToString(), tailLn)
+				str = fmt.Sprintf("%s%s- %s%s\n", str, baseIndent, dataLn, child.ToString())
 			}
 		}
 	case DirectiveTypeDictionary:
@@ -85,16 +81,12 @@ func (d *Directive) ToString() string {
 			it := 0
 			for k, v := range d.Dictionary {
 				dataLn := string(LF)
-				tailLn := string(LF)
-				if it == len(d.Dictionary)-1 {
-					tailLn = ""
-				}
 
 				if v.Type == DirectiveTypeString {
 					dataLn = ""
 				}
 
-				str = fmt.Sprintf("%s%s%s: %s%s%s", str, baseIndent, k, dataLn, v.ToString(), tailLn)
+				str = fmt.Sprintf("%s%s%s: %s%s\n", str, baseIndent, k, dataLn, v.ToString())
 
 				it++
 			}
@@ -297,7 +289,7 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 			if len(d.Text) > 0 {
 				lastLine := d.Text[len(d.Text) - 1]
 				if lastLine[len(lastLine) - 1] == CR {
-					lastLine += string(LF)
+					d.Text[len(d.Text) - 1] += string(LF)
 				}
 			}
 		}

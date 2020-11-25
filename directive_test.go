@@ -615,7 +615,7 @@ func TestToString(t *testing.T) {
 
 	t.Run("list", func(t *testing.T) {
 		line1 := []byte("- aaaa\n")
-		line2 := []byte("- bbbb")
+		line2 := []byte("- bbbb\n")
 		data = []byte(fmt.Sprintf("%s%s", string(line1), string(line2)))
 
 		t.Run("Depth is 0", func(t *testing.T) {
@@ -657,8 +657,8 @@ func TestToString(t *testing.T) {
 
 			depth = 0
 
-			expect1 := func() string { return fmt.Sprintf("%s\n%s", string(line1), string(line2)) }
-			expect2 := func() string { return fmt.Sprintf("%s\n%s", string(line2), string(line1)) }
+			expect1 := func() string { return fmt.Sprintf("%s\n%s\n", string(line1), string(line2)) }
+			expect2 := func() string { return fmt.Sprintf("%s\n%s\n", string(line2), string(line1)) }
 
 			t.Run("should return text with no indentation", func(t *testing.T) {
 				// dictionary is unordered
@@ -675,12 +675,12 @@ func TestToString(t *testing.T) {
 
 			expect1 := func() string {
 				indent := fmt.Sprintf("%*s", depth*indentSize, "")
-				return fmt.Sprintf("%s%s\n%s%s", indent, string(line1), indent, string(line2))
+				return fmt.Sprintf("%s%s\n%s%s\n", indent, string(line1), indent, string(line2))
 			}
 
 			expect2 := func() string {
 				indent := fmt.Sprintf("%*s", depth*indentSize, "")
-				return fmt.Sprintf("%s%s\n%s%s", indent, string(line2), indent, string(line1))
+				return fmt.Sprintf("%s%s\n%s%s\n", indent, string(line2), indent, string(line1))
 			}
 
 			t.Run("should return text with indentation", func(t *testing.T) {
