@@ -2,11 +2,20 @@
 #
 # Check https://circleci.com/docs/2.0/language-go/ for more details
 version: 2
+
+orbs:
+  codecov: codecov/codecov@1.1.2
+
 jobs:
   build:
     docker:
       # specify the version
       - image: circleci/golang:1.15
+
+
+
+    environment:
+      CODECOV_TOKEN:
 
     #### TEMPLATE_NOTE: go expects specific checkout path representing url
     #### expecting it in the form of
@@ -18,5 +27,7 @@ jobs:
 
       - run: git submodule update --init --recursive
       - run: go mod download
-      - run: go test -v .
+      - run: go test -v -coverprofile=cov.out .
+      - codecov/upload:
+        file: ./cov.out
 
