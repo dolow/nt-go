@@ -52,44 +52,36 @@ func (d *Directive) ToString() string {
 	baseIndent := fmt.Sprintf("%*s", d.IndentSize*d.Depth, "")
 	switch d.Type {
 	case DirectiveTypeString:
-		{
-			str = d.String
-		}
+		str = d.String
 	case DirectiveTypeText:
-		{
-			for i := 0; i < len(d.Text); i++ {
-				str = fmt.Sprintf("%s%s> %s", str, baseIndent, d.Text[i])
-			}
+		for i := 0; i < len(d.Text); i++ {
+			str = fmt.Sprintf("%s%s> %s", str, baseIndent, d.Text[i])
 		}
 	case DirectiveTypeList:
-		{
-			for i := 0; i < len(d.List); i++ {
-				// TODO: user prefered line break code
-				dataLn := string(LF)
+		for i := 0; i < len(d.List); i++ {
+			// TODO: user prefered line break code
+			dataLn := string(LF)
 
-				child := d.List[i]
-				if child.Type == DirectiveTypeString {
-					dataLn = ""
-				}
-
-				// TODO: linear recursion
-				str = fmt.Sprintf("%s%s- %s%s\n", str, baseIndent, dataLn, child.ToString())
+			child := d.List[i]
+			if child.Type == DirectiveTypeString {
+				dataLn = ""
 			}
+
+			// TODO: linear recursion
+			str = fmt.Sprintf("%s%s- %s%s\n", str, baseIndent, dataLn, child.ToString())
 		}
 	case DirectiveTypeDictionary:
-		{
-			it := 0
-			for k, v := range d.Dictionary {
-				dataLn := string(LF)
+		it := 0
+		for k, v := range d.Dictionary {
+			dataLn := string(LF)
 
-				if v.Type == DirectiveTypeString {
-					dataLn = ""
-				}
-
-				str = fmt.Sprintf("%s%s%s: %s%s\n", str, baseIndent, k, dataLn, v.ToString())
-
-				it++
+			if v.Type == DirectiveTypeString {
+				dataLn = ""
 			}
+
+			str = fmt.Sprintf("%s%s%s: %s%s\n", str, baseIndent, k, dataLn, v.ToString())
+
+			it++
 		}
 	}
 
