@@ -89,7 +89,7 @@ func Benchmark_Value(b *testing.B) {
 		})
 	})
 
-	b.Run("ToString", func(b *testing.B) {
+	b.Run("ToNestedText", func(b *testing.B) {
 		prepare := func(str string) *Value {
 			content := []byte(str)
 			value := &Value{}
@@ -102,7 +102,7 @@ func Benchmark_Value(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				value.ToString()
+				value.ToNestedText()
 			}
 		})
 		b.Run("Text", func(b *testing.B) {
@@ -110,7 +110,7 @@ func Benchmark_Value(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				value.ToString()
+				value.ToNestedText()
 			}
 		})
 
@@ -119,7 +119,7 @@ func Benchmark_Value(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				value.ToString()
+				value.ToNestedText()
 			}
 		})
 
@@ -128,7 +128,7 @@ func Benchmark_Value(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				value.ToString()
+				value.ToNestedText()
 			}
 		})
 
@@ -158,7 +158,7 @@ func Benchmark_Value(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				value.ToString()
+				value.ToNestedText()
 			}
 		})
 	})

@@ -27,7 +27,7 @@ func TestParse(t *testing.T) {
 			d, err := subject()
 
 			assert.Nil(t, err)
-			str := d.ToString()
+			str := d.ToNestedText()
 
 			another := &Value{}
 			err = another.Parse([]byte(str))
@@ -619,7 +619,7 @@ func TestParse(t *testing.T) {
 	})
 }
 
-func TestToString(t *testing.T) {
+func TestToNestedText(t *testing.T) {
 
 	var data []byte
 	var indentSize int
@@ -638,7 +638,7 @@ func TestToString(t *testing.T) {
 			Depth:      depth,
 		}
 		value.Parse(data)
-		return value.ToString()
+		return value.ToNestedText()
 	}
 
 	t.Run("text", func(t *testing.T) {

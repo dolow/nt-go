@@ -65,46 +65,46 @@ type Value struct {
 	Depth      int
 }
 
-func (d *Value) ToString() string {
+func (v *Value) ToNestedText() string {
 	str := ""
 
-	if d.IndentSize <= 0 {
+	if v.IndentSize <= 0 {
 		// default size
-		d.IndentSize = UnmarshalDefaultIndentSize
+		v.IndentSize = UnmarshalDefaultIndentSize
 	}
 
-	baseIndent := fmt.Sprintf("%*s", d.IndentSize*d.Depth, "")
+	baseIndent := fmt.Sprintf("%*s", v.IndentSize*v.Depth, "")
 
-	switch d.Type {
+	switch v.Type {
 	case ValueTypeString:
-		str = d.String
+		str = v.String
 	case ValueTypeText:
-		for i := 0; i < len(d.Text); i++ {
-			str = fmt.Sprintf("%s%s> %s", str, baseIndent, d.Text[i])
+		for i := 0; i < len(v.Text); i++ {
+			str = fmt.Sprintf("%s%s> %s", str, baseIndent, v.Text[i])
 		}
 	case ValueTypeList:
-		for i := 0; i < len(d.List); i++ {
+		for i := 0; i < len(v.List); i++ {
 			// TODO: user prefered line break code
 			dataLn := string(LF)
 
-			child := d.List[i]
+			child := v.List[i]
 			if child.Type == ValueTypeString {
 				dataLn = string(Space)
 			}
 
 			// TODO: linear recursion
-			str = fmt.Sprintf("%s%s-%s%s\n", str, baseIndent, dataLn, child.ToString())
+			str = fmt.Sprintf("%s%s-%s%s\n", str, baseIndent, dataLn, child.ToNestedText())
 		}
 	case ValueTypeDictionary:
 		it := 0
-		for k, v := range d.Dictionary {
+		for k, v := range v.Dictionary {
 			dataLn := string(LF)
 
 			if v.Type == ValueTypeString {
 				dataLn = string(Space)
 			}
 
-			str = fmt.Sprintf("%s%s%s:%s%s\n", str, baseIndent, k, dataLn, v.ToString())
+			str = fmt.Sprintf("%s%s%s:%s%s\n", str, baseIndent, k, dataLn, v.ToNestedText())
 
 			it++
 		}
@@ -131,8 +131,8 @@ func readLine(buffer *bytes.Buffer) (line []byte, err error) {
 	return
 }
 
-func (d *Value) Parse(content []byte) (err error) {
-	d.Type = ValueTypeUnknown
+func (v *Value) Parse(content []byte) (err error) {
+	v.Type = ValueTypeUnknown
 
 	removeBytesTrailingLineBreaks(&content)
 	buffer := bytes.NewBuffer(content)
@@ -156,7 +156,7 @@ func (d *Value) Parse(content []byte) (err error) {
 			break
 		}
 
-		if d.Depth == 0 && index > 0 {
+		if v.Depth == 0 && index > 0 {
 			err = RootLevelHasIndentError
 			break
 		}
@@ -168,11 +168,11 @@ func (d *Value) Parse(content []byte) (err error) {
 				err = nil
 			}
 		case ValueTypeText:
-			currentLine, loadedNextLine, err = d.readTextValue(index, currentLine, buffer)
+			currentLine, loadedNextLine, err = v.readTextValue(index, currentLine, buffer)
 		case ValueTypeList:
-			currentLine, loadedNextLine, err = d.readListValue(index, currentLine, buffer)
+			currentLine, loadedNextLine, err = v.readListValue(index, currentLine, buffer)
 		case ValueTypeDictionary, ValueTypeString:
-			currentLine, loadedNextLine, err = d.readDictionaryValue(index, currentLine, buffer)
+			currentLine, loadedNextLine, err = v.readDictionaryValue(index, currentLine, buffer)
 		}
 
 		if err != nil {
@@ -180,7 +180,7 @@ func (d *Value) Parse(content []byte) (err error) {
 		}
 	}
 
-	if err == nil && d.Type == ValueTypeUnknown {
+	if err == nil && v.Type == ValueTypeUnknown {
 		err = EmptyDataError
 	}
 
@@ -244,13 +244,13 @@ func detectValueType(line []byte) (ValueType, int, error) {
 	return valueType, index, nil
 }
 
-func (d *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
-	if d.Type != ValueTypeUnknown {
+	if v.Type != ValueTypeUnknown {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
-	d.Type = ValueTypeText
+	v.Type = ValueTypeText
 
 	var err error
 	currentLine := initialLine
@@ -280,19 +280,19 @@ func (d *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *
 			// append text
 			if len(currentLine) <= nextIndex+1 {
 				// text ends with symbol
-				d.Text = append(d.Text, "")
+				v.Text = append(v.Text, "")
 			} else if currentLine[nextIndex+1] == CR || currentLine[nextIndex+1] == LF {
 				// text symbol with no space
-				d.Text = append(d.Text, string(currentLine[nextIndex+1]))
+				v.Text = append(v.Text, string(currentLine[nextIndex+1]))
 			} else {
 				// after text symbol(>) and space
-				d.Text = append(d.Text, string(currentLine[nextIndex+2:]))
+				v.Text = append(v.Text, string(currentLine[nextIndex+2:]))
 			}
 		}
 
 		if err == io.EOF {
-			if len(d.Text) >= 1 {
-				removeStringTrailingLineBreaks(&d.Text[len(d.Text)-1])
+			if len(v.Text) >= 1 {
+				removeStringTrailingLineBreaks(&v.Text[len(v.Text)-1])
 			}
 			return nil, hasNext, nil
 		}
@@ -303,31 +303,31 @@ func (d *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *
 
 		// CRLF
 		if len(currentLine) == 1 && currentLine[0] == LF {
-			if len(d.Text) > 0 {
-				lastLine := d.Text[len(d.Text)-1]
+			if len(v.Text) > 0 {
+				lastLine := v.Text[len(v.Text)-1]
 				if lastLine[len(lastLine)-1] == CR {
-					d.Text[len(d.Text)-1] += string(LF)
+					v.Text[len(v.Text)-1] += string(LF)
 				}
 			}
 		}
 	}
 
 	if hasNext {
-		if len(d.Text) >= 1 {
-			removeStringTrailingLineBreaks(&d.Text[len(d.Text)-1])
+		if len(v.Text) >= 1 {
+			removeStringTrailingLineBreaks(&v.Text[len(v.Text)-1])
 		}
 	}
 
 	return currentLine, hasNext, nil
 }
 
-func (d *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
-	if d.Type != ValueTypeUnknown && d.Type != ValueTypeList {
+	if v.Type != ValueTypeUnknown && v.Type != ValueTypeList {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
-	d.Type = ValueTypeList
+	v.Type = ValueTypeList
 
 	currentLine := initialLine
 	elementContent := currentLine[baseIndentSpaces+1:]
@@ -377,8 +377,8 @@ func (d *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *
 		child = &Value{Type: ValueTypeString}
 
 		if firstChar, _ = readFirstMeaningfulCharacter(elementContent, true); firstChar != EmptyChar {
-			child.IndentSize = d.IndentSize
-			child.Depth = d.Depth + 1
+			child.IndentSize = v.IndentSize
+			child.Depth = v.Depth + 1
 
 			if initialLine[len(initialLine)-1] == CR || initialLine[len(initialLine)-1] == LF {
 				child.String = string(initialLine[baseIndentSpaces+2 : len(initialLine)-1])
@@ -411,8 +411,8 @@ func (d *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *
 		}
 
 		child = &Value{
-			IndentSize: d.IndentSize,
-			Depth:      d.Depth + 1,
+			IndentSize: v.IndentSize,
+			Depth:      v.Depth + 1,
 		}
 
 		// Parse child
@@ -427,17 +427,17 @@ func (d *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *
 		}
 	}
 
-	d.List = append(d.List, child)
+	v.List = append(v.List, child)
 
 	return currentLine, hasNext, nil
 }
 
-func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
 	var err error
 
 	// dictionary
-	if d.Type != ValueTypeUnknown && d.Type != ValueTypeDictionary {
+	if v.Type != ValueTypeUnknown && v.Type != ValueTypeDictionary {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
@@ -451,13 +451,13 @@ func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 		return nil, hasNext, err
 	}
 
-	if d.Dictionary != nil {
-		if _, exists := d.Dictionary[string(key)]; exists {
+	if v.Dictionary != nil {
+		if _, exists := v.Dictionary[string(key)]; exists {
 			return nil, hasNext, DictionaryDuplicateKeyError
 		}
 	}
 
-	d.Type = ValueTypeDictionary
+	v.Type = ValueTypeDictionary
 
 	currentLine := initialLine
 	elementContent := currentLine[valueIndex:]
@@ -509,8 +509,8 @@ func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 
 		// char after line break
 		if firstChar, _ = readFirstMeaningfulCharacter(elementContent, true); firstChar != EmptyChar {
-			child.IndentSize = d.IndentSize
-			child.Depth = d.Depth + 1
+			child.IndentSize = v.IndentSize
+			child.Depth = v.Depth + 1
 
 			if initialLine[len(initialLine)-1] == CR || initialLine[len(initialLine)-1] == LF {
 				child.String = string(initialLine[valueIndex : len(initialLine)-1])
@@ -592,14 +592,14 @@ func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 		// char after line break
 		firstChar, _ = readFirstMeaningfulCharacter(elementContent, true)
 
-		child = &Value{Depth: d.Depth + 1}
+		child = &Value{Depth: v.Depth + 1}
 
 		// empty case
 		if firstChar == EmptyChar {
 			child.Type = ValueTypeString
 			child.String = ""
 		} else {
-			child.IndentSize = d.IndentSize
+			child.IndentSize = v.IndentSize
 
 			if err = child.Parse(elementContent); err == EmptyDataError {
 				child.Type = ValueTypeString
@@ -610,11 +610,11 @@ func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 		}
 	}
 
-	if d.Dictionary == nil {
-		d.Dictionary = make(map[string]*Value)
+	if v.Dictionary == nil {
+		v.Dictionary = make(map[string]*Value)
 	}
 
-	d.Dictionary[string(key)] = child
+	v.Dictionary[string(key)] = child
 
 	return currentLine, hasNext, nil
 }
