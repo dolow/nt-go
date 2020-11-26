@@ -1,4 +1,4 @@
-[![dolow](https://circleci.com/gh/dolow/nt-go.svg?style=svg)](https://app.circleci.com/pipelines/github/dolow/nt-go)
+[![dolow](https://circleci.com/gh/dolow/nt-go.svg?style=svg)](https://app.circleci.com/pipelines/github/dolow/nt-go) [![codecov](https://codecov.io/gh/dolow/nt-go/branch/main/graph/badge.svg)](https://codecov.io/gh/dolow/nt-go)
 
 # nt-go
 
