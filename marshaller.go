@@ -10,12 +10,11 @@ func Marshal(content string, v interface{}) {
 	value := &Value{}
 	value.Parse([]byte(content))
 
-	val := reflect.ValueOf(v)
 	typ := reflect.TypeOf(v)
 
 	var ref reflect.Value
 	if typ.Kind() == reflect.Ptr {
-		ref = val
+		ref = reflect.ValueOf(v)
 		typ = typ.Elem()
 	} else {
 		ref = reflect.New(typ)
