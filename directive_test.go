@@ -1265,3 +1265,27 @@ func TestRemoveBytesTrailingLineBreaks(t *testing.T) {
 		assert.Equal(t, []byte("hello world"), b)
 	})
 }
+
+func TestDirectiveType(t *testing.T) {
+	t.Run("String", func(t *testing.T) {
+		t.Run("shold retrun alias", func(t *testing.T) {
+			assert.Equal(t, "string", DirectiveTypeString.String())
+			assert.Equal(t, "text", DirectiveTypeText.String())
+			assert.Equal(t, "list", DirectiveTypeList.String())
+			assert.Equal(t, "dictionary", DirectiveTypeDictionary.String())
+		})
+	})
+}
+
+func TestMultiLineText(t *testing.T) {
+	m := MultiLineText{
+		"line 1\n",
+		"line 2",
+	}
+
+	t.Run("String", func(t *testing.T) {
+		t.Run("shold joins elements with empty glue", func(t *testing.T) {
+			assert.Equal(t, strings.Join(m, ""), m.String())
+		})
+	})
+}

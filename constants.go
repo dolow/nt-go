@@ -25,5 +25,3 @@ const (
 	MarshallerTagFlagOmitEmpty     = 1
 	MarshallerTagFlagMultilineText = 1 << 1
 )
-
-type MultiLineText []string

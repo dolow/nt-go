@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"unicode"
 )
 
@@ -33,6 +34,24 @@ var (
 	StringWithNewLineError            = errors.New("ntgo: string type can not have line break")
 	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
 )
+
+func (t DirectiveType) String() string {
+	switch t {
+	case DirectiveTypeUnknown:    return "unknown"
+	case DirectiveTypeString:     return "string"
+	case DirectiveTypeText:       return "text"
+	case DirectiveTypeList:       return "list"
+	case DirectiveTypeDictionary: return "dictionary"
+	case DirectiveTypeComment:    return "comment"
+	}
+	return ""
+}
+
+type MultiLineText []string
+
+func (t MultiLineText) String() string {
+	return strings.Join(t, "")
+}
 
 type Directive struct {
 	Type DirectiveType
