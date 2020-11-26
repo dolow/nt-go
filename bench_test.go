@@ -15,15 +15,15 @@ const DictionarySample = `key:
   child1: val1
   child2: val2`
 
-func Benchmark_Directive(b *testing.B) {
+func Benchmark_Value(b *testing.B) {
 	b.Run("Parse", func(b *testing.B) {
 		b.Run("String", func(b *testing.B) {
 			content := []byte(StringSample)
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive := &Directive{}
-				directive.Parse(content)
+				value := &Value{}
+				value.Parse(content)
 			}
 		})
 		b.Run("Text", func(b *testing.B) {
@@ -31,8 +31,8 @@ func Benchmark_Directive(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive := &Directive{}
-				directive.Parse(content)
+				value := &Value{}
+				value.Parse(content)
 			}
 		})
 
@@ -41,8 +41,8 @@ func Benchmark_Directive(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive := &Directive{}
-				directive.Parse(content)
+				value := &Value{}
+				value.Parse(content)
 			}
 		})
 
@@ -51,8 +51,8 @@ func Benchmark_Directive(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive := &Directive{}
-				directive.Parse(content)
+				value := &Value{}
+				value.Parse(content)
 			}
 		})
 
@@ -83,52 +83,52 @@ func Benchmark_Directive(b *testing.B) {
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive := &Directive{}
-				directive.Parse(content)
+				value := &Value{}
+				value.Parse(content)
 			}
 		})
 	})
 
 	b.Run("ToString", func(b *testing.B) {
-		prepare := func(str string) *Directive {
+		prepare := func(str string) *Value {
 			content := []byte(str)
-			directive := &Directive{}
-			directive.Parse(content)
-			return directive
+			value := &Value{}
+			value.Parse(content)
+			return value
 		}
 
 		b.Run("String", func(b *testing.B) {
-			directive := prepare(StringSample)
+			value := prepare(StringSample)
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive.ToString()
+				value.ToString()
 			}
 		})
 		b.Run("Text", func(b *testing.B) {
-			directive := prepare(TextSample)
+			value := prepare(TextSample)
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive.ToString()
+				value.ToString()
 			}
 		})
 
 		b.Run("List", func(b *testing.B) {
-			directive := prepare(ListSample)
+			value := prepare(ListSample)
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive.ToString()
+				value.ToString()
 			}
 		})
 
 		b.Run("Dictionary", func(b *testing.B) {
-			directive := prepare(DictionarySample)
+			value := prepare(DictionarySample)
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive.ToString()
+				value.ToString()
 			}
 		})
 
@@ -154,11 +154,11 @@ func Benchmark_Directive(b *testing.B) {
         - h
 `
 			}
-			directive := prepare(string(content))
+			value := prepare(string(content))
 			b.ResetTimer()
 
 			for i := 0; i < b.N; i++ {
-				directive.ToString()
+				value.ToString()
 			}
 		})
 	})

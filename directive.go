@@ -9,19 +9,19 @@ import (
 	"unicode"
 )
 
-type DirectiveType int
+type ValueType int
 
 const (
-	DirectiveTypeUnknown    DirectiveType = iota
-	DirectiveTypeString     DirectiveType = iota
-	DirectiveTypeText       DirectiveType = iota
-	DirectiveTypeList       DirectiveType = iota
-	DirectiveTypeDictionary DirectiveType = iota
-	DirectiveTypeComment    DirectiveType = iota
+	ValueTypeUnknown    ValueType = iota
+	ValueTypeString     ValueType = iota
+	ValueTypeText       ValueType = iota
+	ValueTypeList       ValueType = iota
+	ValueTypeDictionary ValueType = iota
+	ValueTypeComment    ValueType = iota
 )
 
 var (
-	NextDirectiveAppearedError        = errors.New("ntgo: next directive appeared")
+	NextValueAppearedError            = errors.New("ntgo: next value appeared")
 	DifferentTypesOnTheSameLevelError = errors.New("ntgo: can not place different types of entities on the same level")
 	DictionaryKeyWithUnpairedQuotes   = errors.New("ntgo: quoted dictionary key can not contain unpaired quotes")
 	EmptyDataError                    = errors.New("ntgo: data can not be empty")
@@ -35,14 +35,14 @@ var (
 	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
 )
 
-func (t DirectiveType) String() string {
+func (t ValueType) String() string {
 	switch t {
-	case DirectiveTypeUnknown:    return "unknown"
-	case DirectiveTypeString:     return "string"
-	case DirectiveTypeText:       return "text"
-	case DirectiveTypeList:       return "list"
-	case DirectiveTypeDictionary: return "dictionary"
-	case DirectiveTypeComment:    return "comment"
+	case ValueTypeUnknown:    return "unknown"
+	case ValueTypeString:     return "string"
+	case ValueTypeText:       return "text"
+	case ValueTypeList:       return "list"
+	case ValueTypeDictionary: return "dictionary"
+	case ValueTypeComment:    return "comment"
 	}
 	return ""
 }
@@ -53,19 +53,19 @@ func (t MultiLineText) String() string {
 	return strings.Join(t, "")
 }
 
-type Directive struct {
-	Type DirectiveType
+type Value struct {
+	Type ValueType
 
 	String     string
 	Text       MultiLineText
-	List       []*Directive
-	Dictionary map[string]*Directive
+	List       []*Value
+	Dictionary map[string]*Value
 
 	IndentSize int
 	Depth      int
 }
 
-func (d *Directive) ToString() string {
+func (d *Value) ToString() string {
 	str := ""
 
 	if d.IndentSize <= 0 {
@@ -76,31 +76,31 @@ func (d *Directive) ToString() string {
 	baseIndent := fmt.Sprintf("%*s", d.IndentSize*d.Depth, "")
 
 	switch d.Type {
-	case DirectiveTypeString:
+	case ValueTypeString:
 		str = d.String
-	case DirectiveTypeText:
+	case ValueTypeText:
 		for i := 0; i < len(d.Text); i++ {
 			str = fmt.Sprintf("%s%s> %s", str, baseIndent, d.Text[i])
 		}
-	case DirectiveTypeList:
+	case ValueTypeList:
 		for i := 0; i < len(d.List); i++ {
 			// TODO: user prefered line break code
 			dataLn := string(LF)
 
 			child := d.List[i]
-			if child.Type == DirectiveTypeString {
+			if child.Type == ValueTypeString {
 				dataLn = string(Space)
 			}
 
 			// TODO: linear recursion
 			str = fmt.Sprintf("%s%s-%s%s\n", str, baseIndent, dataLn, child.ToString())
 		}
-	case DirectiveTypeDictionary:
+	case ValueTypeDictionary:
 		it := 0
 		for k, v := range d.Dictionary {
 			dataLn := string(LF)
 
-			if v.Type == DirectiveTypeString {
+			if v.Type == ValueTypeString {
 				dataLn = string(Space)
 			}
 
@@ -131,8 +131,8 @@ func readLine(buffer *bytes.Buffer) (line []byte, err error) {
 	return
 }
 
-func (d *Directive) Parse(content []byte) (err error) {
-	d.Type = DirectiveTypeUnknown
+func (d *Value) Parse(content []byte) (err error) {
+	d.Type = ValueTypeUnknown
 
 	removeBytesTrailingLineBreaks(&content)
 	buffer := bytes.NewBuffer(content)
@@ -151,8 +151,8 @@ func (d *Directive) Parse(content []byte) (err error) {
 			}
 		}
 
-		var directiveType DirectiveType
-		if directiveType, index, err = detectDirectiveType(currentLine); err != nil {
+		var valueType ValueType
+		if valueType, index, err = detectValueType(currentLine); err != nil {
 			break
 		}
 
@@ -161,18 +161,18 @@ func (d *Directive) Parse(content []byte) (err error) {
 			break
 		}
 
-		switch directiveType {
-		case DirectiveTypeUnknown, DirectiveTypeComment:
+		switch valueType {
+		case ValueTypeUnknown, ValueTypeComment:
 			{
 				loadedNextLine = false
 				err = nil
 			}
-		case DirectiveTypeText:
-			currentLine, loadedNextLine, err = d.readTextDirective(index, currentLine, buffer)
-		case DirectiveTypeList:
-			currentLine, loadedNextLine, err = d.readListDirective(index, currentLine, buffer)
-		case DirectiveTypeDictionary, DirectiveTypeString:
-			currentLine, loadedNextLine, err = d.readDictionaryDirective(index, currentLine, buffer)
+		case ValueTypeText:
+			currentLine, loadedNextLine, err = d.readTextValue(index, currentLine, buffer)
+		case ValueTypeList:
+			currentLine, loadedNextLine, err = d.readListValue(index, currentLine, buffer)
+		case ValueTypeDictionary, ValueTypeString:
+			currentLine, loadedNextLine, err = d.readDictionaryValue(index, currentLine, buffer)
 		}
 
 		if err != nil {
@@ -180,15 +180,15 @@ func (d *Directive) Parse(content []byte) (err error) {
 		}
 	}
 
-	if err == nil && d.Type == DirectiveTypeUnknown {
+	if err == nil && d.Type == ValueTypeUnknown {
 		err = EmptyDataError
 	}
 
 	return
 }
 
-func detectDirectiveType(line []byte) (DirectiveType, int, error) {
-	directiveType := DirectiveTypeUnknown
+func detectValueType(line []byte) (ValueType, int, error) {
+	valueType := ValueTypeUnknown
 	index := 0
 
 	chars := []byte{EmptyChar, EmptyChar}
@@ -210,47 +210,47 @@ func detectDirectiveType(line []byte) (DirectiveType, int, error) {
 	case EmptyChar:
 		index = NotFoundIndex
 	case CommentSymbol:
-		directiveType = DirectiveTypeComment
+		valueType = ValueTypeComment
 	case Tab:
-		return DirectiveTypeUnknown, index, TabInIndentationError
+		return ValueTypeUnknown, index, TabInIndentationError
 	case TextSymbol:
 		{
 			switch chars[1] {
 			case Space, CR, LF, EmptyChar:
-				directiveType = DirectiveTypeText
+				valueType = ValueTypeText
 			default:
-				directiveType = DirectiveTypeString
+				valueType = ValueTypeString
 			}
 		}
 	case ListSymbol:
 		{
 			switch chars[1] {
 			case Space, CR, LF, EmptyChar:
-				directiveType = DirectiveTypeList
+				valueType = ValueTypeList
 			default:
-				directiveType = DirectiveTypeString
+				valueType = ValueTypeString
 			}
 		}
 	default:
 		//
 		_, keyIndex := detectKeyBytes(line)
 		if keyIndex == NotFoundIndex {
-			directiveType = DirectiveTypeString
+			valueType = ValueTypeString
 		} else {
-			directiveType = DirectiveTypeDictionary
+			valueType = ValueTypeDictionary
 		}
 	}
 
-	return directiveType, index, nil
+	return valueType, index, nil
 }
 
-func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (d *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
-	if d.Type != DirectiveTypeUnknown {
+	if d.Type != ValueTypeUnknown {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
-	d.Type = DirectiveTypeText
+	d.Type = ValueTypeText
 
 	var err error
 	currentLine := initialLine
@@ -321,20 +321,20 @@ func (d *Directive) readTextDirective(baseIndentSpaces int, initialLine []byte, 
 	return currentLine, hasNext, nil
 }
 
-func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (d *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
-	if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeList {
+	if d.Type != ValueTypeUnknown && d.Type != ValueTypeList {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
-	d.Type = DirectiveTypeList
+	d.Type = ValueTypeList
 
 	currentLine := initialLine
 	elementContent := currentLine[baseIndentSpaces+1:]
 
 	firstChar, _ := readFirstMeaningfulCharacter(elementContent, true)
 
-	var child *Directive
+	var child *Value
 
 	// string case
 	if firstChar != EmptyChar {
@@ -374,7 +374,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 			elementContent = append(elementContent, currentLine...)
 		}
 
-		child = &Directive{Type: DirectiveTypeString}
+		child = &Value{Type: ValueTypeString}
 
 		if firstChar, _ = readFirstMeaningfulCharacter(elementContent, true); firstChar != EmptyChar {
 			child.IndentSize = d.IndentSize
@@ -410,7 +410,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 			elementContent = append(elementContent, currentLine...)
 		}
 
-		child = &Directive{
+		child = &Value{
 			IndentSize: d.IndentSize,
 			Depth:      d.Depth + 1,
 		}
@@ -422,7 +422,7 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 				return nil, hasNext, err
 			}
 			// treat empty data as empty string
-			child.Type = DirectiveTypeString
+			child.Type = ValueTypeString
 			child.String = ""
 		}
 	}
@@ -432,12 +432,12 @@ func (d *Directive) readListDirective(baseIndentSpaces int, initialLine []byte, 
 	return currentLine, hasNext, nil
 }
 
-func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (d *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
 	hasNext := false
 	var err error
 
 	// dictionary
-	if d.Type != DirectiveTypeUnknown && d.Type != DirectiveTypeDictionary {
+	if d.Type != ValueTypeUnknown && d.Type != ValueTypeDictionary {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
@@ -457,14 +457,14 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		}
 	}
 
-	d.Type = DirectiveTypeDictionary
+	d.Type = ValueTypeDictionary
 
 	currentLine := initialLine
 	elementContent := currentLine[valueIndex:]
 
 	firstChar, _ := readFirstMeaningfulCharacter(elementContent, true)
 
-	var child *Directive
+	var child *Value
 
 	// child is string
 	if len(initialLine) > valueIndex {
@@ -505,7 +505,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 			elementContent = append(elementContent, currentLine...)
 		}
 
-		child = &Directive{Type: DirectiveTypeString}
+		child = &Value{Type: ValueTypeString}
 
 		// char after line break
 		if firstChar, _ = readFirstMeaningfulCharacter(elementContent, true); firstChar != EmptyChar {
@@ -592,17 +592,17 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 		// char after line break
 		firstChar, _ = readFirstMeaningfulCharacter(elementContent, true)
 
-		child = &Directive{Depth: d.Depth + 1}
+		child = &Value{Depth: d.Depth + 1}
 
 		// empty case
 		if firstChar == EmptyChar {
-			child.Type = DirectiveTypeString
+			child.Type = ValueTypeString
 			child.String = ""
 		} else {
 			child.IndentSize = d.IndentSize
 
 			if err = child.Parse(elementContent); err == EmptyDataError {
-				child.Type = DirectiveTypeString
+				child.Type = ValueTypeString
 				child.String = ""
 			} else if err != nil {
 				return nil, hasNext, err
@@ -611,7 +611,7 @@ func (d *Directive) readDictionaryDirective(baseIndentSpaces int, initialLine []
 	}
 
 	if d.Dictionary == nil {
-		d.Dictionary = make(map[string]*Directive)
+		d.Dictionary = make(map[string]*Value)
 	}
 
 	d.Dictionary[string(key)] = child

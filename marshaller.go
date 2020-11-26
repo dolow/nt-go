@@ -7,21 +7,21 @@ import (
 )
 
 func Marshal(content string, v interface{}) {
-	directive := &Directive{}
-	directive.Parse([]byte(content))
+	value := &Value{}
+	value.Parse([]byte(content))
 
-	value := reflect.ValueOf(v)
+	val := reflect.ValueOf(v)
 	typ := reflect.TypeOf(v)
 
 	var ref reflect.Value
 	if typ.Kind() == reflect.Ptr {
-		ref = value
+		ref = val
 		typ = typ.Elem()
 	} else {
 		ref = reflect.New(typ)
 	}
 
-	marshal(directive, typ, &ref)
+	marshal(value, typ, &ref)
 }
 
 func Unmarshal(v interface{}) string {
@@ -33,24 +33,24 @@ func Unmarshal(v interface{}) string {
 	return result
 }
 
-func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
+func marshalSlice(value *Value, typ reflect.Type, ref *reflect.Value) {
 	// type of slice element
 	switch typ.Kind() {
 	case reflect.String:
 		{
 			// multiline text
-			switch directive.Type {
-			case DirectiveTypeString:
-				*ref = reflect.Append(*ref, reflect.ValueOf(directive.String))
-			case DirectiveTypeText:
+			switch value.Type {
+			case ValueTypeString:
+				*ref = reflect.Append(*ref, reflect.ValueOf(value.String))
+			case ValueTypeText:
 				{
-					for _, line := range directive.Text {
+					for _, line := range value.Text {
 						*ref = reflect.Append(*ref, reflect.ValueOf(line))
 					}
 				}
-			case DirectiveTypeList:
+			case ValueTypeList:
 				{
-					for _, child := range directive.List {
+					for _, child := range value.List {
 						*ref = reflect.Append(*ref, reflect.ValueOf(child.String))
 					}
 				}
@@ -58,7 +58,7 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		}
 	case reflect.Slice:
 		{
-			for _, child := range directive.List {
+			for _, child := range value.List {
 				childWork := reflect.MakeSlice(typ, 0, cap(child.List))
 				marshalSlice(child, typ.Elem(), &childWork)
 				*ref = reflect.Append(*ref, childWork)
@@ -66,7 +66,7 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		}
 	case reflect.Struct:
 		{
-			for _, child := range directive.List {
+			for _, child := range value.List {
 				elementInstance := reflect.New(typ).Elem()
 				marshal(child, typ, &elementInstance)
 				*ref = reflect.Append(*ref, elementInstance)
@@ -74,7 +74,7 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		}
 	case reflect.Ptr:
 		{
-			for _, child := range directive.List {
+			for _, child := range value.List {
 				elementType := typ.Elem()
 				elementInstance := reflect.New(elementType)
 				marshal(child, elementType, &elementInstance)
@@ -84,7 +84,7 @@ func marshalSlice(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 	}
 }
 
-func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
+func marshal(value *Value, typ reflect.Type, ref *reflect.Value) {
 	substance := *ref
 	if ref.Type().Kind() == reflect.Ptr {
 		substance = substance.Elem()
@@ -102,7 +102,7 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		tagValues := strings.Split(tagValue, MarshallerTagSeparator)
 		key := tagValues[0]
 
-		childDirective, exists := directive.Dictionary[key]
+		childValue, exists := value.Dictionary[key]
 		if !exists {
 			continue
 		}
@@ -112,22 +112,22 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 		switch fieldType.Kind() {
 		case reflect.String:
 			{
-				if childDirective.Type == DirectiveTypeText {
-					fieldRef.SetString(strings.Join(childDirective.Text, ""))
+				if childValue.Type == ValueTypeText {
+					fieldRef.SetString(strings.Join(childValue.Text, ""))
 				} else {
-					fieldRef.SetString(childDirective.String)
+					fieldRef.SetString(childValue.String)
 				}
 			}
 		case reflect.Slice:
 			{
-				work := reflect.MakeSlice(fieldRef.Type(), 0, cap(childDirective.List))
-				marshalSlice(childDirective, fieldType.Elem(), &work)
+				work := reflect.MakeSlice(fieldRef.Type(), 0, cap(childValue.List))
+				marshalSlice(childValue, fieldType.Elem(), &work)
 				fieldRef.Set(work)
 			}
 		case reflect.Struct:
 			{
 				fieldInstance := reflect.New(fieldType).Elem()
-				marshal(childDirective, fieldType, &fieldInstance)
+				marshal(childValue, fieldType, &fieldInstance)
 				fieldRef.Set(fieldInstance)
 			}
 		case reflect.Ptr:
@@ -136,10 +136,10 @@ func marshal(directive *Directive, typ reflect.Type, ref *reflect.Value) {
 				fieldInstance := reflect.New(fieldType)
 				switch fieldType.Kind() {
 				case reflect.Struct:
-					marshal(childDirective, fieldType, &fieldInstance)
+					marshal(childValue, fieldType, &fieldInstance)
 					fieldRef.Set(fieldInstance)
 				case reflect.String:
-					fieldRef.Set(reflect.ValueOf(&childDirective.String))
+					fieldRef.Set(reflect.ValueOf(&childValue.String))
 				}
 			}
 		}
@@ -179,7 +179,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		{
 			var result string
 			var lineBreakAfterKey string
-			directiveSymbol := ListSymbol
+			valueSymbol := ListSymbol
 
 			sliceType := typ.Elem()
 			switch sliceType.Kind() {
@@ -188,7 +188,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			case reflect.String:
 				lineBreakAfterKey = string(Space)
 				if (tagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
-					directiveSymbol = TextSymbol
+					valueSymbol = TextSymbol
 				}
 			default:
 				lineBreakAfterKey = string(LF)
@@ -198,7 +198,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				childRef := ref.Index(i)
 
 				childContent, _ := unmarshal(sliceType, &childRef, depth+1, tagFlag)
-				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(directiveSymbol), lineBreakAfterKey, childContent)
+				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(valueSymbol), lineBreakAfterKey, childContent)
 			}
 			return result, ref.Len() > 0
 		}
