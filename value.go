@@ -12,12 +12,12 @@ import (
 type ValueType int
 
 const (
-	ValueTypeUnknown    ValueType = iota
-	ValueTypeString     ValueType = iota
-	ValueTypeText       ValueType = iota
-	ValueTypeList       ValueType = iota
-	ValueTypeDictionary ValueType = iota
-	ValueTypeComment    ValueType = iota
+	ValueTypeUnknown ValueType = iota
+	ValueTypeString
+	ValueTypeText
+	ValueTypeList
+	ValueTypeDictionary
+	ValueTypeComment
 )
 
 var (
