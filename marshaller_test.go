@@ -1,6 +1,7 @@
 package ntgo
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,9 @@ list_text:
 list_string:
   - list string aaaa
   - list string bbbb
-`
+list_string_pointer:
+  - list string pointer aaaa
+  - list string pointer bbbb`
 
 // TODO: list with different elements that have differed schema
 
@@ -96,6 +99,7 @@ type SampleStruct struct {
 	ListOfListOfStructPointer [][]*SampleListElement `nt:"list_of_list_struct_pointer"`
 	ListOfText                []MultilineStrings     `nt:"list_text,multilinestrings"`
 	ListOfString              []string               `nt:"list_string"`
+	ListOfStringPointer       []*string              `nt:"list_string_pointer"`
 
 	OmitEmptyString    string `nt:"omit_string,omitempty"`
 	NotOmitEmptyString string `nt:"not_omit_string"`
@@ -188,6 +192,13 @@ func TestMarshal(t *testing.T) {
 		assert.Equal(t, "list string bbbb", s.ListOfString[1])
 	})
 
+	t.Run("slice of string pointer", func(t *testing.T) {
+		s := subject()
+
+		assert.Equal(t, "list string pointer aaaa", *s.ListOfStringPointer[0])
+		assert.Equal(t, "list string pointer bbbb", *s.ListOfStringPointer[1])
+	})
+
 	t.Run("holistic", func(t *testing.T) {
 		HolisticSample := `
 string:
@@ -225,6 +236,8 @@ func TestUnmarshal(t *testing.T) {
 
 	subject := func() string {
 		ptr := "str pointer value"
+		listStrPtr1 := "list of str ptr 1"
+		listStrPtr2 := "list of str ptr 2"
 		s := SampleStruct{
 			String:        "str value",
 			StringPointer: &ptr,
@@ -316,6 +329,10 @@ func TestUnmarshal(t *testing.T) {
 				"list of str 1",
 				"list of str 2",
 			},
+			ListOfStringPointer: []*string{
+				&listStrPtr1,
+				&listStrPtr2,
+			},
 		}
 		return Unmarshal(s)
 	}
@@ -380,6 +397,9 @@ list_text:
 list_string:
   - list of str 1
   - list of str 2
+list_string_pointer:
+  - list of str ptr 1
+  - list of str ptr 2
 not_omit_string: 
 `
 
@@ -405,5 +425,152 @@ not_omit_string:
 			ret := Unmarshal(s)
 			assert.Equal(t, "key1: ", ret)
 		})
+	})
+}
+
+func TestMarshalSlice(t *testing.T) {
+	var value *Value
+	var sliceType reflect.Type
+	var elementType reflect.Type
+	var elementRef *reflect.Value
+
+	condition := func() {}
+
+	subject := func() interface{} {
+		marshalSlice(value, elementType, elementRef)
+		return elementRef.Interface()
+	}
+
+	t.Run("string slice for multiline strings", func(t *testing.T) {
+		condition = func() {
+			value = &Value{
+				Type: ValueTypeText,
+				Text: MultilineStrings{
+					"line 1\n",
+					"line 2",
+				},
+			}
+			sliceType = reflect.TypeOf([]string{})
+			elementType = sliceType.Elem()
+
+			instance := reflect.MakeSlice(sliceType, 0, cap(value.Text))
+			elementRef = &instance
+		}
+
+		t.Run("should marshal", func(t *testing.T) {
+			condition()
+			ret := subject()
+
+			slice := ret.([]string)
+			assert.Equal(t, len(value.Text), len(slice))
+			for i, v := range slice {
+				assert.Equal(t, value.Text[i], v)
+			}
+		})
+	})
+
+	t.Run("string slice for list", func(t *testing.T) {
+		value = &Value{
+			Type: ValueTypeList,
+			List: []*Value{
+				&Value{
+					Type:   ValueTypeString,
+					String: "line 1",
+				},
+				&Value{
+					Type:   ValueTypeString,
+					String: "line 2",
+				},
+			},
+		}
+		sliceType := reflect.TypeOf([]string{})
+		instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
+
+		elementType = sliceType.Elem()
+		elementRef = &instance
+
+		subject()
+
+		ret := elementRef.Interface().([]string)
+		assert.Equal(t, len(value.List), len(ret))
+		for i, v := range ret {
+			assert.Equal(t, value.List[i].String, v)
+		}
+	})
+
+	t.Run("string pointer slice", func(t *testing.T) {
+		value = &Value{
+			Type: ValueTypeText,
+			Text: MultilineStrings{
+				"line 1\n",
+				"line 2",
+			},
+		}
+		sliceType := reflect.TypeOf([]*string{})
+		instance := reflect.MakeSlice(sliceType, 0, cap(value.Text))
+
+		elementType = sliceType.Elem()
+		elementRef = &instance
+
+		subject()
+
+		ret := elementRef.Interface().([]*string)
+		assert.Equal(t, len(value.Text), len(ret))
+		for i, v := range ret {
+			assert.Equal(t, value.Text[i], *v)
+		}
+	})
+
+	t.Run("slice of string slice", func(t *testing.T) {
+		value = &Value{
+			Type: ValueTypeList,
+			List: []*Value{
+				&Value{
+					Type: ValueTypeList,
+					List: []*Value{
+						&Value{
+							Type:   ValueTypeString,
+							String: "elem 1 of 1",
+						},
+						&Value{
+							Type:   ValueTypeString,
+							String: "elem 2 of 1",
+						},
+					},
+				},
+				&Value{
+					Type: ValueTypeList,
+					List: []*Value{
+						&Value{
+							Type:   ValueTypeString,
+							String: "elem 1 of 2",
+						},
+						&Value{
+							Type:   ValueTypeString,
+							String: "elem 2 of 2",
+						},
+					},
+				},
+			},
+		}
+		sliceType := reflect.TypeOf([][]string{})
+		instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
+
+		elementType = sliceType.Elem()
+		elementRef = &instance
+
+		subject()
+
+		ret := elementRef.Interface().([][]string)
+		assert.Equal(t, len(value.List), len(ret))
+		for i, v := range ret {
+			childList := value.List[i].List
+
+			assert.Equal(t, len(childList), len(v))
+
+			for ci, cv := range v {
+				assert.Equal(t, childList[ci].String, cv)
+			}
+		}
 	})
 }

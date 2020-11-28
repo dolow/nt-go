@@ -37,12 +37,18 @@ var (
 
 func (t ValueType) String() string {
 	switch t {
-	case ValueTypeUnknown:    return "unknown"
-	case ValueTypeString:     return "string"
-	case ValueTypeText:       return "text"
-	case ValueTypeList:       return "list"
-	case ValueTypeDictionary: return "dictionary"
-	case ValueTypeComment:    return "comment"
+	case ValueTypeUnknown:
+		return "unknown"
+	case ValueTypeString:
+		return "string"
+	case ValueTypeText:
+		return "text"
+	case ValueTypeList:
+		return "list"
+	case ValueTypeDictionary:
+		return "dictionary"
+	case ValueTypeComment:
+		return "comment"
 	}
 	return ""
 }

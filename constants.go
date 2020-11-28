@@ -22,6 +22,6 @@ const (
 	MarshallerTagMultilineStrings = "multilinestrings"
 	UnmarshalDefaultIndentSize    = 2
 
-	MarshallerTagFlagOmitEmpty        = 1 << iota
+	MarshallerTagFlagOmitEmpty = 1 << iota
 	MarshallerTagFlagMultilineStrings
 )

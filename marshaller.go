@@ -32,52 +32,63 @@ func Unmarshal(v interface{}) string {
 	return result
 }
 
-func marshalSlice(value *Value, typ reflect.Type, ref *reflect.Value) {
+func marshalSlice(value *Value, elementType reflect.Type, sliceRef *reflect.Value) {
 	// type of slice element
-	switch typ.Kind() {
+	switch elementType.Kind() {
 	case reflect.String:
 		{
 			// multiline string
 			switch value.Type {
 			case ValueTypeString:
-				*ref = reflect.Append(*ref, reflect.ValueOf(value.String))
+				*sliceRef = reflect.Append(*sliceRef, reflect.ValueOf(value.String))
 			case ValueTypeText:
-				{
-					for _, line := range value.Text {
-						*ref = reflect.Append(*ref, reflect.ValueOf(line))
-					}
+				for _, line := range value.Text {
+					*sliceRef = reflect.Append(*sliceRef, reflect.ValueOf(line))
 				}
 			case ValueTypeList:
-				{
-					for _, child := range value.List {
-						*ref = reflect.Append(*ref, reflect.ValueOf(child.String))
-					}
+				for _, child := range value.List {
+					*sliceRef = reflect.Append(*sliceRef, reflect.ValueOf(child.String))
 				}
 			}
 		}
 	case reflect.Slice:
 		{
 			for _, child := range value.List {
-				childWork := reflect.MakeSlice(typ, 0, cap(child.List))
-				marshalSlice(child, typ.Elem(), &childWork)
-				*ref = reflect.Append(*ref, childWork)
+				childWork := reflect.MakeSlice(elementType, 0, cap(child.List))
+				marshalSlice(child, elementType.Elem(), &childWork)
+				*sliceRef = reflect.Append(*sliceRef, childWork)
 			}
 		}
 	case reflect.Struct:
 		{
 			for _, child := range value.List {
-				elementInstance := reflect.New(typ).Elem()
-				marshal(child, typ, &elementInstance)
-				*ref = reflect.Append(*ref, elementInstance)
+				elementInstance := reflect.New(elementType).Elem()
+				marshal(child, elementType, &elementInstance)
+				*sliceRef = reflect.Append(*sliceRef, elementInstance)
 			}
 		}
 	case reflect.Ptr:
 		{
-			for _, child := range value.List {
-				elementType := typ.Elem()
-				elementInstance := reflect.New(elementType)
-				marshal(child, elementType, &elementInstance)
-				*ref = reflect.Append(*ref, elementInstance)
+			switch value.Type {
+			case ValueTypeText:
+				for i, _ := range value.Text {
+					// using value occurs late binding
+					*sliceRef = reflect.Append(*sliceRef, reflect.ValueOf(&value.Text[i]))
+				}
+			case ValueTypeList:
+				elementType := elementType.Elem()
+				switch elementType.Kind() {
+				case reflect.String:
+					for _, child := range value.List {
+						*sliceRef = reflect.Append(*sliceRef, reflect.ValueOf(&child.String))
+					}
+				case reflect.Struct:
+					for _, child := range value.List {
+						elementInstance := reflect.New(elementType)
+						marshal(child, elementType, &elementInstance)
+						*sliceRef = reflect.Append(*sliceRef, elementInstance)
+					}
+				}
 			}
 		}
 	}
@@ -180,8 +191,13 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			var lineBreakAfterKey string
 			valueSymbol := ListSymbol
 
-			sliceType := typ.Elem()
-			switch sliceType.Kind() {
+			sliceElementType := typ.Elem()
+			sliceElementPointingType := sliceElementType
+			if sliceElementType.Kind() == reflect.Ptr {
+				sliceElementPointingType = sliceElementType.Elem()
+			}
+
+			switch sliceElementPointingType.Kind() {
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 				lineBreakAfterKey = string(Space)
 			case reflect.String:
@@ -196,7 +212,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			for i := 0; i < ref.Len(); i++ {
 				childRef := ref.Index(i)
 
-				childContent, _ := unmarshal(sliceType, &childRef, depth+1, tagFlag)
+				childContent, _ := unmarshal(sliceElementType, &childRef, depth+1, tagFlag)
 				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(valueSymbol), lineBreakAfterKey, childContent)
 			}
 			return result, ref.Len() > 0

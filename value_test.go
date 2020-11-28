@@ -2,8 +2,8 @@ package ntgo
 
 import (
 	"bytes"
-	"io/ioutil"
 	"fmt"
+	"io/ioutil"
 	"strings"
 	"testing"
 
@@ -32,9 +32,9 @@ func TestParse(t *testing.T) {
 			another := &Value{}
 			err = another.Parse([]byte(str))
 
-			var deepEqual func (*testing.T, *Value, *Value)
+			var deepEqual func(*testing.T, *Value, *Value)
 
-			deepEqual = func (t *testing.T, d1 *Value, d2 *Value) {
+			deepEqual = func(t *testing.T, d1 *Value, d2 *Value) {
 				switch d1.Type {
 				case ValueTypeString:
 					assert.Equal(t, d1.String, d2.String)
