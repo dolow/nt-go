@@ -585,7 +585,6 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 
 			if char != EmptyChar && char != ListSymbol && char != TextSymbol && char != CommentSymbol {
 				_, valueIndex := detectKeyBytes(currentLine)
-				// sepIndex := getDictionarySeparatorIndex(line)
 				if valueIndex == NotFoundIndex {
 					// string has line break
 					return nil, hasNext, StringWithNewLineError
@@ -752,21 +751,4 @@ func detectKeyBytes(line []byte) ([]byte, int) {
 	}
 	// 5.
 	return line[meaningfulIndex:delimiterBeginIndex], delimiterEndIndex
-}
-
-func getDictionarySeparatorIndex(line []byte) int {
-	index := len(line) - 1
-	var char byte
-
-	for index >= 0 {
-		char = line[index]
-
-		if DictionaryKeySeparator == char {
-			return index
-		}
-
-		index--
-	}
-
-	return NotFoundIndex
 }
