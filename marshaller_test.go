@@ -72,8 +72,8 @@ list_string:
 // TODO: list with different elements that have differed schema
 
 type SampleDict struct {
-	DictString string        `nt:"dict_string"`
-	DictText   MultiLineText `nt:"dict_text,multilinetext"`
+	DictString string           `nt:"dict_string"`
+	DictText   MultilineStrings `nt:"dict_text,multilinestrings"`
 }
 
 type SampleListElement struct {
@@ -84,8 +84,8 @@ type SampleStruct struct {
 	String        string  `nt:"string"`
 	StringPointer *string `nt:"string_ptr"`
 
-	Text      []string      `nt:"text,multilinetext"`
-	TextAlias MultiLineText `nt:"text_alias,multilinetext"`
+	Text      []string         `nt:"text,multilinestrings"`
+	TextAlias MultilineStrings `nt:"text_alias,multilinestrings"`
 
 	Dict          SampleDict  `nt:"dict"`
 	DictOfPointer *SampleDict `nt:"dict_ptr"`
@@ -94,7 +94,7 @@ type SampleStruct struct {
 	ListOfStructPointer       []*SampleListElement   `nt:"list_ptr"`
 	ListOfListOfStruct        [][]SampleListElement  `nt:"list_of_list_struct"`
 	ListOfListOfStructPointer [][]*SampleListElement `nt:"list_of_list_struct_pointer"`
-	ListOfText                []MultiLineText        `nt:"list_text,multilinetext"`
+	ListOfText                []MultilineStrings     `nt:"list_text,multilinestrings"`
 	ListOfString              []string               `nt:"list_string"`
 
 	OmitEmptyString    string `nt:"omit_string,omitempty"`
@@ -214,7 +214,7 @@ text: one liner text
 }
 
 type StringStruct struct {
-	MultilineString string `nt:"key"`
+	Lines string `nt:"key"`
 }
 type RefStruct struct {
 	RefString1 *string `nt:"key1"`
@@ -238,14 +238,14 @@ func TestUnmarshal(t *testing.T) {
 			},
 			Dict: SampleDict{
 				DictString: "dict string value",
-				DictText: MultiLineText{
+				DictText: MultilineStrings{
 					"dict text value 1",
 					"dict text value 2",
 				},
 			},
 			DictOfPointer: &SampleDict{
 				DictString: "dict pointer string value",
-				DictText: MultiLineText{
+				DictText: MultilineStrings{
 					"dict pointer text value 1",
 					"dict pointer text value 2",
 				},
@@ -302,12 +302,12 @@ func TestUnmarshal(t *testing.T) {
 					},
 				},
 			},
-			ListOfText: []MultiLineText{
-				MultiLineText{
+			ListOfText: []MultilineStrings{
+				MultilineStrings{
 					"list of text 1",
 					"list of text 2",
 				},
-				MultiLineText{
+				MultilineStrings{
 					"list of text 3",
 					"list of text 4",
 				},

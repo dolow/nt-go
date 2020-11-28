@@ -47,9 +47,9 @@ func (t ValueType) String() string {
 	return ""
 }
 
-type MultiLineText []string
+type MultilineStrings []string
 
-func (t MultiLineText) String() string {
+func (t MultilineStrings) String() string {
 	return strings.Join(t, "")
 }
 
@@ -57,7 +57,7 @@ type Value struct {
 	Type ValueType
 
 	String     string
-	Text       MultiLineText
+	Text       MultilineStrings
 	List       []*Value
 	Dictionary map[string]*Value
 

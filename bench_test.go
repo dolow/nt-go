@@ -7,7 +7,7 @@ import (
 const StringSample = `key: string`
 const TextSample = `key:
   > multiline
-  > text`
+  > string`
 const ListSample = `key:
   - list
   - element`

@@ -104,7 +104,7 @@ func TestString(t *testing.T) {
 		assert.Equal(t, `And Fred said 'yabba dabba doo!' to Barney.`, child.String)
 	})
 	t.Run("string_5", func(t *testing.T) {
-		// json with only empty string is converted to empty multiline text
+		// json with only empty string is converted to empty multiline strings
 		// TODO: json conversion
 	})
 	t.Run("string_6", func(t *testing.T) {

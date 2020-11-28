@@ -37,7 +37,7 @@ func marshalSlice(value *Value, typ reflect.Type, ref *reflect.Value) {
 	switch typ.Kind() {
 	case reflect.String:
 		{
-			// multiline text
+			// multiline string
 			switch value.Type {
 			case ValueTypeString:
 				*ref = reflect.Append(*ref, reflect.ValueOf(value.String))
@@ -186,7 +186,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				lineBreakAfterKey = string(Space)
 			case reflect.String:
 				lineBreakAfterKey = string(Space)
-				if (tagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+				if (tagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
 					valueSymbol = TextSymbol
 				}
 			default:
@@ -237,7 +237,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 					if len(lines) > 1 {
 						lineBreakAfterKey = string(LF)
 					} else {
-						if (childTagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+						if (childTagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
 							lineBreakAfterKey = string(LF)
 						}
 					}
@@ -249,7 +249,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 						if len(lines) > 1 {
 							lineBreakAfterKey = string(LF)
 						} else {
-							if (childTagFlag & MarshallerTagFlagMultilineText) == MarshallerTagFlagMultilineText {
+							if (childTagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
 								lineBreakAfterKey = string(LF)
 							}
 						}
@@ -285,8 +285,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 func getTagFlagFromTagValue(tagValues []string) (flag int) {
 	for i := 1; i < len(tagValues); i++ {
 		switch tagValues[i] {
-		case MarshallerTagMultilineText:
-			flag |= MarshallerTagFlagMultilineText
+		case MarshallerTagMultilineStrings:
+			flag |= MarshallerTagFlagMultilineStrings
 		case MarshallerTagOmitEmpty:
 			flag |= MarshallerTagFlagOmitEmpty
 		}
