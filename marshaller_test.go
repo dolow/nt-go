@@ -107,6 +107,14 @@ type SampleStruct struct {
 	NoTag string
 }
 
+type StringStruct struct {
+	Str string `nt:"key"`
+}
+type RefStruct struct {
+	RefString1 *string `nt:"key1"`
+	RefString2 *string `nt:"key2,omitempty"`
+}
+
 func TestMarshal(t *testing.T) {
 
 	subject := func() *SampleStruct {
@@ -222,14 +230,6 @@ text: one liner text
 			assert.Equal(t, "one liner text", s.Text[0])
 		})
 	})
-}
-
-type StringStruct struct {
-	Lines string `nt:"key"`
-}
-type RefStruct struct {
-	RefString1 *string `nt:"key1"`
-	RefString2 *string `nt:"key2,omitempty"`
 }
 
 func TestUnmarshal(t *testing.T) {
@@ -441,136 +441,227 @@ func TestMarshalSlice(t *testing.T) {
 		return elementRef.Interface()
 	}
 
-	t.Run("string slice for multiline strings", func(t *testing.T) {
-		condition = func() {
-			value = &Value{
-				Type: ValueTypeText,
-				Text: MultilineStrings{
-					"line 1\n",
-					"line 2",
-				},
+	t.Run("string", func(t *testing.T) {
+		t.Run("from multiline strings", func(t *testing.T) {
+			condition = func() {
+				value = &Value{
+					Type: ValueTypeText,
+					Text: MultilineStrings{
+						"line 1\n",
+						"line 2",
+					},
+				}
+				elementType = sliceType.Elem()
+
+				instance := reflect.MakeSlice(sliceType, 0, cap(value.Text))
+				elementRef = &instance
 			}
-			sliceType = reflect.TypeOf([]string{})
-			elementType = sliceType.Elem()
 
-			instance := reflect.MakeSlice(sliceType, 0, cap(value.Text))
-			elementRef = &instance
-		}
+			t.Run("to string array", func(t *testing.T) {
+				sliceType = reflect.TypeOf([]string{})
 
-		t.Run("should marshal", func(t *testing.T) {
-			condition()
-			ret := subject()
+				t.Run("should pass", func(t *testing.T) {
+					condition()
 
-			slice := ret.([]string)
-			assert.Equal(t, len(value.Text), len(slice))
-			for i, v := range slice {
-				assert.Equal(t, value.Text[i], v)
+					ret := subject().([]string)
+					assert.Equal(t, len(value.Text), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.Text[i], v)
+					}
+				})
+			})
+
+			t.Run("to string pointer slice", func(t *testing.T) {
+				sliceType = reflect.TypeOf([]*string{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+
+					ret := subject().([]*string)
+					assert.Equal(t, len(value.Text), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.Text[i], *v)
+						assert.Equal(t, &value.Text[i], v)
+					}
+				})
+			})
+		})
+
+		t.Run("from list of strings", func(t *testing.T) {
+			condition = func() {
+				value = &Value{
+					Type: ValueTypeList,
+					List: []*Value{
+						&Value{
+							Type:   ValueTypeString,
+							String: "line 1",
+						},
+						&Value{
+							Type:   ValueTypeString,
+							String: "line 2",
+						},
+					},
+				}
+
+				instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
+
+				elementType = sliceType.Elem()
+				elementRef = &instance
 			}
+
+			t.Run("to string slice", func(t *testing.T) {
+
+				sliceType = reflect.TypeOf([]string{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+
+					ret := subject().([]string)
+					assert.Equal(t, len(value.List), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.List[i].String, v)
+					}
+				})
+			})
+
+			t.Run("to string pointer slice", func(t *testing.T) {
+
+				sliceType = reflect.TypeOf([]*string{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+
+					ret := subject().([]*string)
+					assert.Equal(t, len(value.List), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.List[i].String, *v)
+						assert.Equal(t, &value.List[i].String, v)
+					}
+				})
+			})
+		})
+
+		t.Run("from nested list of string to slice of string slice", func(t *testing.T) {
+			condition = func() {
+				value = &Value{
+					Type: ValueTypeList,
+					List: []*Value{
+						&Value{
+							Type: ValueTypeList,
+							List: []*Value{
+								&Value{
+									Type:   ValueTypeString,
+									String: "elem 1 of 1",
+								},
+								&Value{
+									Type:   ValueTypeString,
+									String: "elem 2 of 1",
+								},
+							},
+						},
+						&Value{
+							Type: ValueTypeList,
+							List: []*Value{
+								&Value{
+									Type:   ValueTypeString,
+									String: "elem 1 of 2",
+								},
+								&Value{
+									Type:   ValueTypeString,
+									String: "elem 2 of 2",
+								},
+							},
+						},
+					},
+				}
+				instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
+
+				elementType = sliceType.Elem()
+				elementRef = &instance
+			}
+
+			t.Run("to slice of string slice", func(t *testing.T) {
+
+				sliceType = reflect.TypeOf([][]string{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+
+					ret := subject().([][]string)
+					assert.Equal(t, len(value.List), len(ret))
+					for i, v := range ret {
+						childList := value.List[i].List
+
+						assert.Equal(t, len(childList), len(v))
+
+						for ci, cv := range v {
+							assert.Equal(t, childList[ci].String, cv)
+						}
+					}
+				})
+			})
 		})
 	})
 
-	t.Run("string slice for list", func(t *testing.T) {
-		value = &Value{
-			Type: ValueTypeList,
-			List: []*Value{
-				&Value{
-					Type:   ValueTypeString,
-					String: "line 1",
-				},
-				&Value{
-					Type:   ValueTypeString,
-					String: "line 2",
-				},
-			},
-		}
-		sliceType := reflect.TypeOf([]string{})
-		instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
-
-		elementType = sliceType.Elem()
-		elementRef = &instance
-
-		subject()
-
-		ret := elementRef.Interface().([]string)
-		assert.Equal(t, len(value.List), len(ret))
-		for i, v := range ret {
-			assert.Equal(t, value.List[i].String, v)
-		}
-	})
-
-	t.Run("string pointer slice", func(t *testing.T) {
-		value = &Value{
-			Type: ValueTypeText,
-			Text: MultilineStrings{
-				"line 1\n",
-				"line 2",
-			},
-		}
-		sliceType := reflect.TypeOf([]*string{})
-		instance := reflect.MakeSlice(sliceType, 0, cap(value.Text))
-
-		elementType = sliceType.Elem()
-		elementRef = &instance
-
-		subject()
-
-		ret := elementRef.Interface().([]*string)
-		assert.Equal(t, len(value.Text), len(ret))
-		for i, v := range ret {
-			assert.Equal(t, value.Text[i], *v)
-		}
-	})
-
-	t.Run("slice of string slice", func(t *testing.T) {
-		value = &Value{
-			Type: ValueTypeList,
-			List: []*Value{
-				&Value{
+	t.Run("struct", func(t *testing.T) {
+		t.Run("from list of structure", func(t *testing.T) {
+			condition = func() {
+				value = &Value{
 					Type: ValueTypeList,
 					List: []*Value{
 						&Value{
-							Type:   ValueTypeString,
-							String: "elem 1 of 1",
+							Type: ValueTypeDictionary,
+							Dictionary: map[string]*Value{
+								"key": &Value{
+									Type:   ValueTypeString,
+									String: "item 1",
+								},
+							},
 						},
 						&Value{
-							Type:   ValueTypeString,
-							String: "elem 2 of 1",
+							Type: ValueTypeDictionary,
+							Dictionary: map[string]*Value{
+								"key": &Value{
+									Type:   ValueTypeString,
+									String: "item 2",
+								},
+							},
 						},
 					},
-				},
-				&Value{
-					Type: ValueTypeList,
-					List: []*Value{
-						&Value{
-							Type:   ValueTypeString,
-							String: "elem 1 of 2",
-						},
-						&Value{
-							Type:   ValueTypeString,
-							String: "elem 2 of 2",
-						},
-					},
-				},
-			},
-		}
-		sliceType := reflect.TypeOf([][]string{})
-		instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
+				}
 
-		elementType = sliceType.Elem()
-		elementRef = &instance
+				instance := reflect.MakeSlice(sliceType, 0, cap(value.List))
 
-		subject()
-
-		ret := elementRef.Interface().([][]string)
-		assert.Equal(t, len(value.List), len(ret))
-		for i, v := range ret {
-			childList := value.List[i].List
-
-			assert.Equal(t, len(childList), len(v))
-
-			for ci, cv := range v {
-				assert.Equal(t, childList[ci].String, cv)
+				elementType = sliceType.Elem()
+				elementRef = &instance
 			}
-		}
+			t.Run("to slice of struct", func(t *testing.T) {
+
+				sliceType = reflect.TypeOf([]StringStruct{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+					ret := subject().([]StringStruct)
+					assert.Equal(t, len(value.List), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.List[i].Dictionary["key"].String, v.Str)
+					}
+				})
+			})
+
+			t.Run("to slice of struct pointer", func(t *testing.T) {
+
+				sliceType = reflect.TypeOf([]*StringStruct{})
+
+				t.Run("should pass", func(t *testing.T) {
+					condition()
+					ret := subject().([]*StringStruct)
+					assert.Equal(t, len(value.List), len(ret))
+					for i, v := range ret {
+						assert.Equal(t, value.List[i].Dictionary["key"].String, v.Str)
+					}
+				})
+			})
+		})
 	})
 }
