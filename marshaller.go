@@ -1,26 +1,31 @@
 package ntgo
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"strings"
 )
 
-func Marshal(content string, v interface{}) {
+var (
+	ValueIsNotPointerError = errors.New("ntgo: marshaling target must be pointer")
+)
+
+func Marshal(content string, v interface{}) error {
+	typ := reflect.TypeOf(v)
+	if typ.Kind() != reflect.Ptr {
+		return ValueIsNotPointerError
+	}
+
 	value := &Value{}
 	value.Parse([]byte(content))
 
-	typ := reflect.TypeOf(v)
-
-	var ref reflect.Value
-	if typ.Kind() == reflect.Ptr {
-		ref = reflect.ValueOf(v)
-		typ = typ.Elem()
-	} else {
-		ref = reflect.New(typ)
-	}
+	ref := reflect.ValueOf(v)
+	typ = typ.Elem()
 
 	marshal(value, typ, &ref)
+
+	return nil
 }
 
 func Unmarshal(v interface{}) string {

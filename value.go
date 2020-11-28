@@ -119,7 +119,11 @@ func (v *Value) ToNestedText() string {
 	return str
 }
 
-func readLine(buffer *bytes.Buffer) (line []byte, err error) {
+type ByteReader interface {
+	ReadByte() (byte, error)
+}
+
+func readLine(buffer ByteReader) (line []byte, err error) {
 	var b byte
 	for err != io.EOF {
 		if b, err = buffer.ReadByte(); err != nil && err != io.EOF {
@@ -250,7 +254,7 @@ func detectValueType(line []byte) (ValueType, int, error) {
 	return valueType, index, nil
 }
 
-func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer ByteReader) ([]byte, bool, error) {
 	hasNext := false
 	if v.Type != ValueTypeUnknown {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
@@ -327,7 +331,7 @@ func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer *
 	return currentLine, hasNext, nil
 }
 
-func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer ByteReader) ([]byte, bool, error) {
 	hasNext := false
 	if v.Type != ValueTypeUnknown && v.Type != ValueTypeList {
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
@@ -438,7 +442,7 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer *
 	return currentLine, hasNext, nil
 }
 
-func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, buffer *bytes.Buffer) ([]byte, bool, error) {
+func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, buffer ByteReader) ([]byte, bool, error) {
 	hasNext := false
 	var err error
 

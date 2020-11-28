@@ -117,34 +117,44 @@ type RefStruct struct {
 
 func TestMarshal(t *testing.T) {
 
-	subject := func() *SampleStruct {
+	subject := func() (*SampleStruct, error) {
 		s := &SampleStruct{}
-		Marshal(Sample, s)
-		return s
+		err := Marshal(Sample, s)
+		return s, err
 	}
 
+	t.Run("when argument is not pointer", func(t *testing.T) {
+
+		arg := SampleStruct{}
+
+		t.Run("should return ValueIsNotPointerError", func(t *testing.T) {
+			err := Marshal(Sample, arg)
+			assert.Equal(t, ValueIsNotPointerError, err)
+		})
+	})
+
 	t.Run("string", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "hello", s.String)
 	})
 
 	t.Run("string slice", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "aaaa\n", s.Text[0])
 		assert.Equal(t, "bbbb", s.Text[1])
 	})
 
 	t.Run("string slice alias", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "aaaa alias\n", s.TextAlias[0])
 		assert.Equal(t, "bbbb alias", s.TextAlias[1])
 	})
 
 	t.Run("struct", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "world", s.Dict.DictString)
 		assert.Equal(t, "dict text aaaa\n", s.Dict.DictText[0])
@@ -152,7 +162,7 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("reference of struct", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "world pointer", s.DictOfPointer.DictString)
 		assert.Equal(t, "dict text aaaa pointer\n", s.DictOfPointer.DictText[0])
@@ -160,14 +170,14 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("slice of struct", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "aaaa", s.ListOfStruct[0].ListString)
 		assert.Equal(t, "bbbb", s.ListOfStruct[1].ListString)
 	})
 
 	t.Run("slice of slice of struct", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "aaaa nested", s.ListOfListOfStruct[0][0].ListString)
 		assert.Equal(t, "bbbb nested", s.ListOfListOfStruct[0][1].ListString)
@@ -176,7 +186,7 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("slice of slice of struct pointer", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "aaaa nested pointer", s.ListOfListOfStructPointer[0][0].ListString)
 		assert.Equal(t, "bbbb nested pointer", s.ListOfListOfStructPointer[0][1].ListString)
@@ -185,7 +195,7 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("slice of text", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "list text aaaa\n", s.ListOfText[0][0])
 		assert.Equal(t, "list text bbbb", s.ListOfText[0][1])
@@ -194,14 +204,14 @@ func TestMarshal(t *testing.T) {
 	})
 
 	t.Run("slice of string", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "list string aaaa", s.ListOfString[0])
 		assert.Equal(t, "list string bbbb", s.ListOfString[1])
 	})
 
 	t.Run("slice of string pointer", func(t *testing.T) {
-		s := subject()
+		s, _ := subject()
 
 		assert.Equal(t, "list string pointer aaaa", *s.ListOfStringPointer[0])
 		assert.Equal(t, "list string pointer bbbb", *s.ListOfStringPointer[1])
@@ -214,18 +224,18 @@ string:
   > line break
 text: one liner text
 `
-		subject = func() *SampleStruct {
+		subject = func() (*SampleStruct, error) {
 			s := &SampleStruct{}
-			Marshal(HolisticSample, s)
-			return s
+			err := Marshal(HolisticSample, s)
+			return s, err
 		}
 
 		t.Run("should join multi line text into string", func(t *testing.T) {
-			s := subject()
+			s, _ := subject()
 			assert.Equal(t, "str with\nline break", s.String)
 		})
 		t.Run("should split string into string slice", func(t *testing.T) {
-			s := subject()
+			s, _ := subject()
 			assert.Equal(t, 1, len(s.Text))
 			assert.Equal(t, "one liner text", s.Text[0])
 		})

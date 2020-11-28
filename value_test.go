@@ -2,13 +2,27 @@ package ntgo
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
+
+var (
+	TestError = errors.New("error for test")
+)
+
+type ErrorBuffer struct {
+	ByteReader
+}
+
+func (ErrorBuffer) ReadByte() (byte, error) {
+	return 0x00, TestError
+}
 
 func TestParse(t *testing.T) {
 
@@ -617,6 +631,18 @@ func TestParse(t *testing.T) {
 			})
 		})
 	})
+
+	t.Run("irregular cases", func(t *testing.T) {
+		t.Run("when input contains tab indentation", func(t *testing.T) {
+
+			data = []byte("\ttext: aaa")
+
+			t.Run("should return TabInIndentationError", func(t *testing.T) {
+				_, err := subject()
+				assert.Equal(t, TabInIndentationError, err)
+			})
+		})
+	})
 }
 
 func TestToNestedText(t *testing.T) {
@@ -905,15 +931,15 @@ func TestReadTextValue(t *testing.T) {
 
 	var index int
 	var firstLine []byte
-	var buffer *bytes.Buffer
+	var buffer ByteReader
 
 	var content []byte
 
-	var bufferInitializer func() *bytes.Buffer
+	var bufferInitializer func() ByteReader
 
 	prepare := func() {
 		value = &Value{}
-		bufferInitializer = func() *bytes.Buffer {
+		bufferInitializer = func() ByteReader {
 			return bytes.NewBuffer(content)
 		}
 	}
@@ -1193,20 +1219,31 @@ func TestReadTextValue(t *testing.T) {
 
 		t.Run("when content consists of lines with different values", func(t *testing.T) {
 			condition = func() {
+				index = 0
 				firstLine = []byte("> first line\n")
 				content = []byte("- list")
 			}
 
-			t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
+			t.Run("should return DifferentTypesOnTheSameLevelError", func(t *testing.T) {
 				prepare()
 				_, _, err := subject()
-				assert.Equal(t, DifferentLevelOnSameChildError, err)
+				assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
 			})
 
 			t.Run("should return nil for next line", func(t *testing.T) {
 				prepare()
 				nextLine, _, _ := subject()
 				assert.Nil(t, nextLine)
+			})
+		})
+
+		t.Run("when buffer returns error except io.EOF", func(t *testing.T) {
+			buf := &ErrorBuffer{}
+
+			t.Run("should return error originally from buffer", func(t *testing.T) {
+				prepare()
+				_, _, err := value.readTextValue(0, []byte("> line 1"), buf)
+				assert.Equal(t, TestError, err)
 			})
 		})
 	})
@@ -1269,10 +1306,12 @@ func TestRemoveBytesTrailingLineBreaks(t *testing.T) {
 func TestValueType(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		t.Run("shold retrun alias", func(t *testing.T) {
+			assert.Equal(t, "unknown", ValueTypeUnknown.String())
 			assert.Equal(t, "string", ValueTypeString.String())
 			assert.Equal(t, "text", ValueTypeText.String())
 			assert.Equal(t, "list", ValueTypeList.String())
 			assert.Equal(t, "dictionary", ValueTypeDictionary.String())
+			assert.Equal(t, "comment", ValueTypeComment.String())
 		})
 	})
 }
@@ -1286,6 +1325,51 @@ func TestMultilineStrings(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
 		t.Run("shold joins elements with empty glue", func(t *testing.T) {
 			assert.Equal(t, strings.Join(m, ""), m.String())
+		})
+	})
+}
+
+func TestReadLine(t *testing.T) {
+	var content []byte
+	var buffer *bytes.Buffer
+
+	subject := func() ([]byte, error) {
+		buffer = bytes.NewBuffer(content)
+		return readLine(buffer)
+	}
+
+	t.Run("when retrieving line is not eof", func(t *testing.T) {
+		content = []byte("line 1\nline 2")
+
+		t.Run("should return nil err", func(t *testing.T) {
+			_, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return line with line break", func(t *testing.T) {
+			line, _ := subject()
+			assert.Equal(t, []byte("line 1\n"), line)
+		})
+	})
+
+	t.Run("when retrieving line not eof", func(t *testing.T) {
+		content = []byte("final line")
+
+		t.Run("should return io.EOF err", func(t *testing.T) {
+			_, err := subject()
+			assert.Equal(t, io.EOF, err)
+		})
+		t.Run("should return line without line break", func(t *testing.T) {
+			line, _ := subject()
+			assert.Equal(t, []byte("final line"), line)
+		})
+	})
+
+	t.Run("when bytes.Buffer ReadByte returns error except io.EOF", func(t *testing.T) {
+		content = []byte("final line")
+
+		t.Run("should return io.EOF err", func(t *testing.T) {
+			_, err := readLine(&ErrorBuffer{})
+			assert.Equal(t, TestError, err)
 		})
 	})
 }
