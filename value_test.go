@@ -1104,16 +1104,31 @@ func TestReadTextValue(t *testing.T) {
 
 	t.Run("irregulars", func(t *testing.T) {
 		t.Run("when indent contains tab character", func(t *testing.T) {
-			condition = func() {
-				index = 2
-				firstLine = []byte("  > line 1\n")
-				content = []byte(" \t > line 2")
-			}
+			t.Run("when it is initial line", func(t *testing.T) {
+				condition = func() {
+					index = 2
+					firstLine = []byte(" \t > line 1\n")
+					content = []byte(" > line 2")
+				}
 
-			t.Run("should return TabInIndentationError", func(t *testing.T) {
-				prepare()
-				_, _, err := subject()
-				assert.Equal(t, TabInIndentationError, err)
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
+			})
+			t.Run("when it is second line", func(t *testing.T) {
+				condition = func() {
+					index = 2
+					firstLine = []byte("  > line 1\n")
+					content = []byte(" \t > line 2")
+				}
+
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
 			})
 		})
 		t.Run("when Type is already defined", func(t *testing.T) {
@@ -1427,16 +1442,31 @@ func TestReadListValue(t *testing.T) {
 
 	t.Run("irregulars", func(t *testing.T) {
 		t.Run("when indent contains tab character", func(t *testing.T) {
-			condition = func() {
-				index = 0
-				firstLine = []byte("-\n")
-				content = []byte(" \t - first element")
-			}
+			t.Run("when it is initial line", func(t *testing.T) {
+				condition = func() {
+					index = 1
+					firstLine = []byte(" \t -\n")
+					content = []byte("    - first element")
+				}
 
-			t.Run("should return TabInIndentationError", func(t *testing.T) {
-				prepare()
-				_, _, err := subject()
-				assert.Equal(t, TabInIndentationError, err)
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
+			})
+			t.Run("when it is second line", func(t *testing.T) {
+				condition = func() {
+					index = 0
+					firstLine = []byte("-\n")
+					content = []byte(" \t - first element")
+				}
+
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
 			})
 		})
 		t.Run("when Type is already defined", func(t *testing.T) {
@@ -1736,16 +1766,31 @@ key2: next dict`)
 
 	t.Run("irregulars", func(t *testing.T) {
 		t.Run("when indent contains tab character", func(t *testing.T) {
-			condition = func() {
-				index = 0
-				firstLine = []byte("key1:\n")
-				content = []byte(" \t key1_1: first element")
-			}
+			t.Run("when it is initial line", func(t *testing.T) {
+				condition = func() {
+					index = 1
+					firstLine = []byte(" \t key1:\n")
+					content = []byte("    key1_1: first element")
+				}
 
-			t.Run("should return TabInIndentationError", func(t *testing.T) {
-				prepare()
-				_, _, err := subject()
-				assert.Equal(t, TabInIndentationError, err)
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
+			})
+			t.Run("when it is second line", func(t *testing.T) {
+				condition = func() {
+					index = 0
+					firstLine = []byte("key1:\n")
+					content = []byte(" \t key1_1: first element")
+				}
+
+				t.Run("should return TabInIndentationError", func(t *testing.T) {
+					prepare()
+					_, _, err := subject()
+					assert.Equal(t, TabInIndentationError, err)
+				})
 			})
 		})
 		t.Run("when Type is already defined", func(t *testing.T) {
