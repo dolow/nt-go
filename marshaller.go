@@ -172,6 +172,9 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		value := ref.String()
 		lines := strings.Split(value, string(LF))
 		if len(lines) == 1 {
+			if (tagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
+				return fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), value, string(LF)), value != ""
+			}
 			return fmt.Sprintf("%s%s", value, string(LF)), value != ""
 		}
 
@@ -184,7 +187,10 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		{
 			var result string
 			var lineBreakAfterKey string
-			valueToken := ListToken
+			valueToken := string(ListToken)
+			indentSize := depth * UnmarshalDefaultIndentSize
+			childDepth := depth + 1
+			depthAddition := 1
 
 			sliceElementType := typ.Elem()
 			sliceElementPointingType := sliceElementType
@@ -196,9 +202,13 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 				lineBreakAfterKey = string(Space)
 			case reflect.String:
-				lineBreakAfterKey = string(Space)
 				if (tagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
-					valueToken = TextToken
+					childDepth = depth
+					lineBreakAfterKey = ""
+					valueToken = ""
+					indentSize = 0
+				} else {
+					lineBreakAfterKey = string(Space)
 				}
 			default:
 				lineBreakAfterKey = string(LF)
@@ -207,8 +217,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			for i := 0; i < ref.Len(); i++ {
 				childRef := ref.Index(i)
 
-				childContent, _ := unmarshal(sliceElementType, &childRef, depth+1, tagFlag)
-				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(valueToken), lineBreakAfterKey, childContent)
+				childContent, _ := unmarshal(sliceElementType, &childRef, childDepth, tagFlag)
+				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", indentSize, ""), valueToken, lineBreakAfterKey, childContent)
 			}
 			return result, ref.Len() > 0
 		}
@@ -285,7 +295,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			}
 
 			elem := ref.Elem()
-			return unmarshal(typ.Elem(), &elem, depth, 0)
+			return unmarshal(typ.Elem(), &elem, depth, tagFlag)
 		}
 	}
 	return "", false

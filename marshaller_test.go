@@ -729,20 +729,20 @@ func TestMarshalSlice(t *testing.T) {
 }
 
 func TestUnmarshalMultilineStrings(t *testing.T) {
-	subject := func() string {
-		ptrLine1 := "ptr slice line 1"
-		ptrLine2 := "ptr slice line 2"
-		s := SampleMultilineString{
-			Str:         "line 1\nline 2",
-			StrSlice:    []string{"slice line 1", "slice line 2"},
-			StrPtrSlice: []*string{&ptrLine1, &ptrLine2},
+	t.Run("multiple line", func(t *testing.T) {
+		subject := func() string {
+			ptrLine1 := "ptr slice line 1"
+			ptrLine2 := "ptr slice line 2"
+			s := SampleMultilineString{
+				Str:         "line 1\nline 2",
+				StrSlice:    []string{"slice line 1", "slice line 2"},
+				StrPtrSlice: []*string{&ptrLine1, &ptrLine2},
+			}
+			return Unmarshal(s)
 		}
-		return Unmarshal(s)
-	}
-
-	t.Run("success", func(t *testing.T) {
-		ret := subject()
-		assert.Equal(t, `str:
+		t.Run("should success", func(t *testing.T) {
+			ret := subject()
+			assert.Equal(t, `str:
   > line 1
   > line 2
 str_slice:
@@ -752,6 +752,28 @@ str_ptr_slice:
   > ptr slice line 1
   > ptr slice line 2
 `, ret)
+		})
 	})
 
+	t.Run("single line", func(t *testing.T) {
+		subject := func() string {
+			ptrLine := "ptr slice line"
+			s := SampleMultilineString{
+				Str:         "line",
+				StrSlice:    []string{"slice line"},
+				StrPtrSlice: []*string{&ptrLine},
+			}
+			return Unmarshal(s)
+		}
+		t.Run("should success", func(t *testing.T) {
+			ret := subject()
+			assert.Equal(t, `str:
+  > line
+str_slice:
+  > slice line
+str_ptr_slice:
+  > ptr slice line
+`, ret)
+		})
+	})
 }
