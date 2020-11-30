@@ -197,7 +197,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			}
 
 			switch sliceElementPointingType.Kind() {
-			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 				lineBreakAfterKey = string(Space)
 			case reflect.String:
 				lineBreakAfterKey = string(Space)

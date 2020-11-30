@@ -121,6 +121,11 @@ type NumberStruct struct {
 	Float32    float32  `nt:"float"`
 	IntPtr     *int     `nt:"int_ptr"`
 	Float32Ptr *float32 `nt:"float_ptr"`
+
+	IntSlice        []int      `nt:"int_slice"`
+	Float32Slice    []float32  `nt:"float_slice"`
+	IntPtrSlice     []*int     `nt:"int_ptr_slice"`
+	Float32PtrSlice []*float32 `nt:"float_ptr_slice"`
 }
 
 func TestMarshal(t *testing.T) {
@@ -429,7 +434,15 @@ not_omit_string: `
 	t.Run("struct with number", func(t *testing.T) {
 		var i int = 123456
 		var f float32 = 1.23456
-		s := NumberStruct{-123456, -1.23456, &i, &f}
+		s := NumberStruct{
+			-123456,
+			-1.23456,
+			&i,
+			&f,
+			[]int{123, 456},
+			[]float32{1.23, 4.56},
+			[]*int{&i}, []*float32{&f},
+		}
 		ret := Unmarshal(s)
 
 		t.Run("should unmarshaled to string", func(t *testing.T) {
@@ -438,7 +451,17 @@ not_omit_string: `
 			assert.Equal(t, "float: -1.2345", lines[1][0:14])
 			assert.Equal(t, "int_ptr: 123456", lines[2])
 			assert.Equal(t, "float_ptr: 1.2345", lines[3][0:17])
-			assert.Equal(t, "", lines[4])
+			assert.Equal(t, "int_slice:", lines[4])
+			assert.Equal(t, "  - 123", lines[5])
+			assert.Equal(t, "  - 456", lines[6])
+			assert.Equal(t, "float_slice:", lines[7])
+			assert.Equal(t, "  - 1.2", lines[8][0:7])
+			assert.Equal(t, "  - 4.5", lines[9][0:7])
+			assert.Equal(t, "int_ptr_slice:", lines[10])
+			assert.Equal(t, "  - 123456", lines[11])
+			assert.Equal(t, "float_ptr_slice:", lines[12])
+			assert.Equal(t, "  - 1.2345", lines[13][0:10])
+			assert.Equal(t, "", lines[14])
 		})
 	})
 
