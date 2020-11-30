@@ -465,9 +465,8 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 	if key == nil && valueIndex == NotFoundIndex {
 		return nil, hasNext, RootStringError
 	}
-	if err = sanitizeDictionaryKey(&key); err != nil {
-		return nil, hasNext, err
-	}
+	
+	sanitizeDictionaryKey(&key)
 
 	if v.Dictionary != nil {
 		if _, exists := v.Dictionary[string(key)]; exists {
@@ -650,7 +649,7 @@ func removeBytesTrailingLineBreaks(b *[]byte) {
 	}
 }
 
-func sanitizeDictionaryKey(key *[]byte) error {
+func sanitizeDictionaryKey(key *[]byte) {
 	keyLen := len(*key)
 
 	index := len(*key) - 1
@@ -676,8 +675,6 @@ func sanitizeDictionaryKey(key *[]byte) error {
 			keyLen = len(*key)
 		}
 	}
-
-	return nil
 }
 
 func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
