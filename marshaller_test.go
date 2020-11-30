@@ -80,6 +80,12 @@ type SampleDict struct {
 	DictText   MultilineStrings `nt:"dict_text,multilinestrings"`
 }
 
+type SampleMultilineString struct {
+	Str         string    `nt:"str,multilinestrings"`
+	StrSlice    []string  `nt:"str_slice,multilinestrings"`
+	StrPtrSlice []*string `nt:"str_ptr_slice,multilinestrings"`
+}
+
 type SampleListElement struct {
 	ListString string `nt:"list_string"`
 }
@@ -470,7 +476,7 @@ not_omit_string: `
 
 		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
 			ret := Unmarshal(s)
-			assert.Equal(t, "key:\n  > line1\n  > line2", ret)
+			assert.Equal(t, "key:\n  > line1\n  > line2\n", ret)
 		})
 	})
 
@@ -720,4 +726,32 @@ func TestMarshalSlice(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestUnmarshalMultilineStrings(t *testing.T) {
+	subject := func() string {
+		ptrLine1 := "ptr slice line 1"
+		ptrLine2 := "ptr slice line 2"
+		s := SampleMultilineString{
+			Str:         "line 1\nline 2",
+			StrSlice:    []string{"slice line 1", "slice line 2"},
+			StrPtrSlice: []*string{&ptrLine1, &ptrLine2},
+		}
+		return Unmarshal(s)
+	}
+
+	t.Run("success", func(t *testing.T) {
+		ret := subject()
+		assert.Equal(t, `str:
+  > line 1
+  > line 2
+str_slice:
+  > slice line 1
+  > slice line 2
+str_ptr_slice:
+  > ptr slice line 1
+  > ptr slice line 2
+`, ret)
+	})
+
 }

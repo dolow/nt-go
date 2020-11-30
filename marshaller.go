@@ -176,12 +176,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		}
 
 		result := ""
-		for i, line := range lines {
-			if i == len(lines)-1 {
-				result += fmt.Sprintf("%s%s %s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), line)
-			} else {
-				result += fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), line, string(LF))
-			}
+		for _, line := range lines {
+			result += fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), line, string(LF))
 		}
 		return result, true
 	case reflect.Slice:
