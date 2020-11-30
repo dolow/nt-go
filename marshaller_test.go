@@ -122,6 +122,9 @@ type RefStruct struct {
 	RefString1 *string `nt:"key1"`
 	RefString2 *string `nt:"key2,omitempty"`
 }
+type UnsupportedStruct struct {
+	F bool `nt:"f"`
+}
 
 type NumberStruct struct {
 	Int        int      `nt:"int"`
@@ -487,6 +490,15 @@ not_omit_string: `
 		t.Run("should unmarshaled to multi line text", func(t *testing.T) {
 			ret := Unmarshal(s)
 			assert.Equal(t, "key1: ", ret)
+		})
+	})
+
+	t.Run("unsupported type of field", func(t *testing.T) {
+		s := UnsupportedStruct{true}
+
+		t.Run("should return empty value", func(t *testing.T) {
+			ret := Unmarshal(s)
+			assert.Equal(t, "f:\n", ret)
 		})
 	})
 }
