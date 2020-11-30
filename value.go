@@ -455,6 +455,10 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 		return nil, hasNext, DifferentTypesOnTheSameLevelError
 	}
 
+	if initialLine[baseIndentSpaces] == LF {
+		return nil, hasNext, ExpectedTokenError
+	}
+
 	key, valueIndex := detectKeyBytes(initialLine)
 
 	// unexpected string

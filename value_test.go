@@ -127,7 +127,7 @@ func TestParse(t *testing.T) {
 			})
 		})
 
-		t.Run("string with comment symbol (#)", func(t *testing.T) {
+		t.Run("string with comment token (#)", func(t *testing.T) {
 			expect = "plain text # it is not comment"
 			data = []byte(expect)
 
@@ -813,7 +813,7 @@ func TestDetectValueType(t *testing.T) {
 			assert.Equal(t, ValueTypeComment, typ)
 		})
 
-		t.Run("should return index of # symbol", func(t *testing.T) {
+		t.Run("should return index of # token", func(t *testing.T) {
 			_, index, _ := subject()
 			assert.Equal(t, strings.Index(string(data), "#"), index)
 		})
@@ -851,7 +851,7 @@ func TestDetectValueType(t *testing.T) {
 			assert.Equal(t, ValueTypeText, typ)
 		})
 
-		t.Run("should return index of > symbol", func(t *testing.T) {
+		t.Run("should return index of > token", func(t *testing.T) {
 			_, index, _ := subject()
 			assert.Equal(t, strings.Index(string(data), ">"), index)
 		})
@@ -870,7 +870,7 @@ func TestDetectValueType(t *testing.T) {
 			assert.Equal(t, ValueTypeList, typ)
 		})
 
-		t.Run("should return index of - symbol", func(t *testing.T) {
+		t.Run("should return index of - token", func(t *testing.T) {
 			_, index, _ := subject()
 			assert.Equal(t, strings.Index(string(data), "-"), index)
 		})
@@ -1005,7 +1005,7 @@ func TestReadTextValue(t *testing.T) {
 			assert.Equal(t, "third line", value.Text[2])
 		})
 	})
-	t.Run("when text ends with text symbol(>)", func(t *testing.T) {
+	t.Run("when text ends with text token(>)", func(t *testing.T) {
 		condition = func() {
 			index = 0
 			firstLine = []byte("> first line\n")
@@ -1299,7 +1299,7 @@ func TestReadListValue(t *testing.T) {
 		t.Run("should List slice ends with last element of list", func(t *testing.T) {
 			prepare()
 			subject()
-			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, 2, len(value.List[0].List))
 			assert.Equal(t, "second element", value.List[0].List[1].String)
 		})
 	})
@@ -1324,7 +1324,7 @@ func TestReadListValue(t *testing.T) {
 		t.Run("should List slice ends with last element", func(t *testing.T) {
 			prepare()
 			subject()
-			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, 2, len(value.List[0].List))
 			assert.Equal(t, "second element", value.List[0].List[1].String)
 		})
 	})
@@ -1347,7 +1347,7 @@ func TestReadListValue(t *testing.T) {
 		t.Run("should add empty string element to List slice", func(t *testing.T) {
 			prepare()
 			subject()
-			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, 1, len(value.List[0].List))
 			assert.Equal(t, "", value.List[0].List[0].String)
 		})
 	})
@@ -1382,7 +1382,7 @@ func TestReadListValue(t *testing.T) {
 		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
 			prepare()
 			subject()
-			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, 2, len(value.List[0].List))
 			assert.Equal(t, "first element", value.List[0].List[0].String)
 			assert.Equal(t, "second element", value.List[0].List[1].String)
 		})
@@ -1406,7 +1406,7 @@ func TestReadListValue(t *testing.T) {
 		t.Run("should add only meaningful lines to List slice", func(t *testing.T) {
 			prepare()
 			subject()
-			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, 2, len(value.List[0].List))
 			assert.Equal(t, "first element", value.List[0].List[0].String)
 			assert.Equal(t, "second element", value.List[0].List[1].String)
 		})
@@ -1539,6 +1539,302 @@ func TestReadListValue(t *testing.T) {
 			t.Run("should return error originally from buffer", func(t *testing.T) {
 				prepare()
 				_, _, err := value.readListValue(0, []byte("- element 1"), buf)
+				assert.Equal(t, TestError, err)
+			})
+		})
+	})
+}
+
+func TestReadDictionaryValue(t *testing.T) {
+
+	var value *Value
+
+	var index int
+	var firstLine []byte
+	var buffer ByteReader
+
+	var content []byte
+
+	var bufferInitializer func() ByteReader
+
+	prepare := func() {
+		value = &Value{}
+		bufferInitializer = func() ByteReader {
+			return bytes.NewBuffer(content)
+		}
+	}
+
+	condition := func() {}
+
+	subject := func() ([]byte, bool, error) {
+		condition()
+		buffer = bufferInitializer()
+		return value.readDictionaryValue(index, firstLine, buffer)
+	}
+
+	t.Run("when next value appeared", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("key1:\n")
+			content = []byte(`  key1_1: first element
+  key1_2: second element
+key2: next dict`)
+		}
+
+		t.Run("should return NextValueAppearedError", func(t *testing.T) {
+			prepare()
+			_, hasNext, err := subject()
+			assert.True(t, hasNext)
+			assert.Nil(t, err)
+		})
+		t.Run("should return first line of next different value", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("key2: next dict"), nextLine)
+		})
+		t.Run("should Dictionary map has last element of list", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.Dictionary))
+			assert.Equal(t, "second element", value.Dictionary["key1"].Dictionary["key1_2"].String)
+		})
+	})
+
+	t.Run("when eof occured", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("key1:\n")
+			content = []byte("  key1_1:")
+		}
+
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  key1_1:"), nextLine)
+		})
+		t.Run("should Dictionary map has last element", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.Dictionary))
+			assert.Equal(t, "", value.Dictionary["key1"].Dictionary["key1_1"].String)
+		})
+	})
+	t.Run("when dictionary ends with Dictionary key delimiter token (:)", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("key1:\n")
+			content = []byte("  key1_1:")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  key1_1:"), nextLine)
+		})
+		t.Run("should add empty string element to List slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.Dictionary))
+			assert.Equal(t, "", value.Dictionary["key1"].Dictionary["key1_1"].String)
+		})
+	})
+	t.Run("when dictionary contains blank line on the head", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("\n")
+			content = []byte("key1:\n  key1_1: first element\n  key1_2: second element")
+		}
+		t.Run("should return nil error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Equal(t, ExpectedTokenError, err)
+		})
+	})
+	t.Run("when dictionary contains blank line on the middle", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("key1:\n")
+			content = []byte("\n  key1_1: first element\n  key1_2: second element")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  key1_2: second element"), nextLine)
+		})
+		t.Run("should add only meaningful lines to Dictionary map", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(value.Dictionary["key1"].Dictionary))
+			assert.Equal(t, "first element", value.Dictionary["key1"].Dictionary["key1_1"].String)
+			assert.Equal(t, "second element", value.Dictionary["key1"].Dictionary["key1_2"].String)
+		})
+	})
+	t.Run("when dictionary ends with blank line", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("key1:\n")
+			content = []byte("  key1_1: first element\n  key1_2: second element\n")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add only meaningful lines to Dictionary map", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 2, len(value.Dictionary["key1"].Dictionary))
+			assert.Equal(t, "first element", value.Dictionary["key1"].Dictionary["key1_1"].String)
+			assert.Equal(t, "second element", value.Dictionary["key1"].Dictionary["key1_2"].String)
+		})
+	})
+
+	t.Run("irregulars", func(t *testing.T) {
+		t.Run("when Type is already defined", func(t *testing.T) {
+			condition = func() {
+				index = 0
+				firstLine = []byte("key1:\n")
+				content = []byte("  key1_1: first element\n  key1_2: second element")
+
+				value.Type = ValueTypeText
+			}
+
+			t.Run("should return DifferentTypesOnTheSameLevelError", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
+			})
+
+			t.Run("should return nil for nextLine", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Nil(t, nextLine)
+			})
+		})
+
+		t.Run("when content consists of lines with different indentations", func(t *testing.T) {
+
+			t.Run("when first element is string", func(t *testing.T) {
+
+				index = 2
+				firstLine = []byte("  key1: first line\n")
+
+				t.Run("when following line is deeper", func(t *testing.T) {
+
+					contentPh := "    %s"
+
+					t.Run("when following line is dictionary", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "ley1_1: text"))
+						}
+
+						t.Run("should return StringHasChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, StringHasChildError, err)
+						})
+
+						t.Run("should return nil for nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+
+					t.Run("when following line is not dictionary", func(t *testing.T) {
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "> list"))
+						}
+
+						t.Run("should return TextHasChildError with StringHasChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, StringHasChildError, err)
+						})
+
+						t.Run("should return nil for nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+				})
+
+				t.Run("when following element is shallower", func(t *testing.T) {
+
+					contentPh := "%s"
+
+					t.Run("when following line is dictionary", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "key1_1: text"))
+						}
+
+						t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, DifferentLevelOnSameChildError, err)
+						})
+
+						t.Run("should return nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+				})
+			})
+
+			t.Run("when first element is dictionary", func(t *testing.T) {
+				index = 2
+				firstLine = []byte("  key1:\n")
+
+				t.Run("when following line is deeper", func(t *testing.T) {
+
+					contentPh := "    %s"
+
+					t.Run("when following line is dictionary", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "key1_1: text"))
+						}
+
+						t.Run("should return nil error", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Nil(t, err)
+						})
+					})
+				})
+			})
+		})
+
+		t.Run("when buffer returns error except io.EOF", func(t *testing.T) {
+			buf := &ErrorBuffer{}
+
+			t.Run("should return error originally from buffer", func(t *testing.T) {
+				prepare()
+				_, _, err := value.readDictionaryValue(0, []byte("key1: element 1"), buf)
 				assert.Equal(t, TestError, err)
 			})
 		})
