@@ -1249,6 +1249,302 @@ func TestReadTextValue(t *testing.T) {
 	})
 }
 
+func TestReadListValue(t *testing.T) {
+
+	var value *Value
+
+	var index int
+	var firstLine []byte
+	var buffer ByteReader
+
+	var content []byte
+
+	var bufferInitializer func() ByteReader
+
+	prepare := func() {
+		value = &Value{}
+		bufferInitializer = func() ByteReader {
+			return bytes.NewBuffer(content)
+		}
+	}
+
+	condition := func() {}
+
+	subject := func() ([]byte, bool, error) {
+		condition()
+		buffer = bufferInitializer()
+		return value.readListValue(index, firstLine, buffer)
+	}
+
+	t.Run("when next value appeared", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("-\n")
+			content = []byte(`  - first element
+  - second element
+- next list`)
+		}
+
+		t.Run("should return NextValueAppearedError", func(t *testing.T) {
+			prepare()
+			_, hasNext, err := subject()
+			assert.True(t, hasNext)
+			assert.Nil(t, err)
+		})
+		t.Run("should return first line of next different value", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("- next list"), nextLine)
+		})
+		t.Run("should List slice ends with last element of list", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, "second element", value.List[0].List[1].String)
+		})
+	})
+
+	t.Run("when eof occured", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("- \n")
+			content = []byte("  - first element\n  - second element")
+		}
+
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  - second element"), nextLine)
+		})
+		t.Run("should List slice ends with last element", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, "second element", value.List[0].List[1].String)
+		})
+	})
+	t.Run("when list ends with list token (-)", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("- \n")
+			content = []byte("  -")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  -"), nextLine)
+		})
+		t.Run("should add empty string element to List slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, "", value.List[0].List[0].String)
+		})
+	})
+	t.Run("when list contains blank line on the head", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("\n")
+			content = []byte("- \n  - first element\n  - second element")
+		}
+		t.Run("should return nil error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Equal(t, ExpectedTokenError, err)
+		})
+	})
+	t.Run("when list contains blank line on the middle", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("- \n")
+			content = []byte("\n  - first element\n  - second element")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return last line for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Equal(t, []byte("  - second element"), nextLine)
+		})
+		t.Run("should add only meaningful lines to Text slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, "first element", value.List[0].List[0].String)
+			assert.Equal(t, "second element", value.List[0].List[1].String)
+		})
+	})
+	t.Run("when text ends with blank line", func(t *testing.T) {
+		condition = func() {
+			index = 0
+			firstLine = []byte("- \n")
+			content = []byte("  - first element\n  - second element\n")
+		}
+		t.Run("should return nil for error", func(t *testing.T) {
+			prepare()
+			_, _, err := subject()
+			assert.Nil(t, err)
+		})
+		t.Run("should return nil for next line", func(t *testing.T) {
+			prepare()
+			nextLine, _, _ := subject()
+			assert.Nil(t, nextLine)
+		})
+		t.Run("should add only meaningful lines to List slice", func(t *testing.T) {
+			prepare()
+			subject()
+			assert.Equal(t, 1, len(value.List))
+			assert.Equal(t, "first element", value.List[0].List[0].String)
+			assert.Equal(t, "second element", value.List[0].List[1].String)
+		})
+	})
+
+	t.Run("irregulars", func(t *testing.T) {
+		t.Run("when Type is already defined", func(t *testing.T) {
+			condition = func() {
+				index = 0
+				firstLine = []byte("- first element\n")
+				content = []byte("- second element")
+
+				value.Type = ValueTypeText
+			}
+
+			t.Run("should return DifferentTypesOnTheSameLevelError", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Equal(t, DifferentTypesOnTheSameLevelError, err)
+			})
+
+			t.Run("should return nil for nextLine", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Nil(t, nextLine)
+			})
+		})
+
+		t.Run("when content consists of lines with different indentations", func(t *testing.T) {
+
+			t.Run("when first element is string", func(t *testing.T) {
+
+				index = 2
+				firstLine = []byte("  - first line\n")
+
+				t.Run("when following line is deeper", func(t *testing.T) {
+
+					contentPh := "    %s"
+
+					t.Run("when following line is list", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "- text"))
+						}
+
+						t.Run("should return StringHasChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, StringHasChildError, err)
+						})
+
+						t.Run("should return nil for nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+
+					t.Run("when following line is not list", func(t *testing.T) {
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "> list"))
+						}
+
+						t.Run("should return TextHasChildError with StringHasChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, StringHasChildError, err)
+						})
+
+						t.Run("should return nil for nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+				})
+
+				t.Run("when following line is shallower", func(t *testing.T) {
+
+					contentPh := "%s"
+
+					t.Run("when following line is list", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "- text"))
+						}
+
+						t.Run("should return DifferentLevelOnSameChildError", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Equal(t, DifferentLevelOnSameChildError, err)
+						})
+
+						t.Run("should return nextLine", func(t *testing.T) {
+							prepare()
+							nextLine, _, _ := subject()
+							assert.Nil(t, nextLine)
+						})
+					})
+				})
+			})
+
+			t.Run("when first element is list", func(t *testing.T) {
+				index = 2
+				firstLine = []byte("  - \n")
+
+				t.Run("when following line is deeper", func(t *testing.T) {
+
+					contentPh := "    %s"
+
+					t.Run("when following line is list", func(t *testing.T) {
+
+						condition = func() {
+							content = []byte(fmt.Sprintf(contentPh, "- text"))
+						}
+
+						t.Run("should return nil error", func(t *testing.T) {
+							prepare()
+							_, _, err := subject()
+							assert.Nil(t, err)
+						})
+					})
+				})
+			})
+		})
+
+		t.Run("when buffer returns error except io.EOF", func(t *testing.T) {
+			buf := &ErrorBuffer{}
+
+			t.Run("should return error originally from buffer", func(t *testing.T) {
+				prepare()
+				_, _, err := value.readListValue(0, []byte("- element 1"), buf)
+				assert.Equal(t, TestError, err)
+			})
+		})
+	})
+}
+
 func TestRemoveStringTrailingLineBreaks(t *testing.T) {
 	t.Run("should remove trailing line break", func(t *testing.T) {
 		str := "hello world\n"
@@ -1305,13 +1601,20 @@ func TestRemoveBytesTrailingLineBreaks(t *testing.T) {
 
 func TestValueType(t *testing.T) {
 	t.Run("String", func(t *testing.T) {
-		t.Run("shold retrun alias", func(t *testing.T) {
+		t.Run("shold return alias", func(t *testing.T) {
 			assert.Equal(t, "unknown", ValueTypeUnknown.String())
 			assert.Equal(t, "string", ValueTypeString.String())
 			assert.Equal(t, "text", ValueTypeText.String())
 			assert.Equal(t, "list", ValueTypeList.String())
 			assert.Equal(t, "dictionary", ValueTypeDictionary.String())
 			assert.Equal(t, "comment", ValueTypeComment.String())
+		})
+
+		t.Run("when illegal type is passed", func(t *testing.T) {
+			var typ ValueType = 100
+			t.Run("shold return empty string", func(t *testing.T) {
+				assert.Equal(t, "", typ.String())
+			})
 		})
 	})
 }

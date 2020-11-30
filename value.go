@@ -33,6 +33,7 @@ var (
 	DifferentLevelOnSameChildError    = errors.New("ntgo: child elements have dirfferent levels")
 	StringWithNewLineError            = errors.New("ntgo: string type can not have line break")
 	DictionaryDuplicateKeyError       = errors.New("ntgo: dictionary type can not have the same key")
+	ExpectedTokenError                = errors.New("ntgo: expected token for input value")
 )
 
 func (t ValueType) String() string {
@@ -340,6 +341,9 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 	v.Type = ValueTypeList
 
 	currentLine := initialLine
+	if currentLine[baseIndentSpaces] != ListSymbol {
+		return nil, hasNext, ExpectedTokenError
+	}
 	elementContent := currentLine[baseIndentSpaces+1:]
 
 	firstChar, _ := readFirstMeaningfulCharacter(elementContent, true)
@@ -373,11 +377,11 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 			// validate
 			if currentLine[nextIndex] != CommentSymbol {
 				if nextIndex > baseIndentSpaces {
-					return currentLine, hasNext, StringHasChildError
+					return nil, hasNext, StringHasChildError
 				}
 				// parent should not be contained
 				if nextIndex < baseIndentSpaces {
-					return currentLine, hasNext, DifferentLevelOnSameChildError
+					return nil, hasNext, DifferentLevelOnSameChildError
 				}
 			}
 
