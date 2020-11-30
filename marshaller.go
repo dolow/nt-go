@@ -178,9 +178,9 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		result := ""
 		for i, line := range lines {
 			if i == len(lines)-1 {
-				result += fmt.Sprintf("%s%s %s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextSymbol), line)
+				result += fmt.Sprintf("%s%s %s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), line)
 			} else {
-				result += fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextSymbol), line, string(LF))
+				result += fmt.Sprintf("%s%s %s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(TextToken), line, string(LF))
 			}
 		}
 		return result, true
@@ -188,7 +188,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 		{
 			var result string
 			var lineBreakAfterKey string
-			valueSymbol := ListSymbol
+			valueToken := ListToken
 
 			sliceElementType := typ.Elem()
 			sliceElementPointingType := sliceElementType
@@ -202,7 +202,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			case reflect.String:
 				lineBreakAfterKey = string(Space)
 				if (tagFlag & MarshallerTagFlagMultilineStrings) == MarshallerTagFlagMultilineStrings {
-					valueSymbol = TextSymbol
+					valueToken = TextToken
 				}
 			default:
 				lineBreakAfterKey = string(LF)
@@ -212,7 +212,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				childRef := ref.Index(i)
 
 				childContent, _ := unmarshal(sliceElementType, &childRef, depth+1, tagFlag)
-				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(valueSymbol), lineBreakAfterKey, childContent)
+				result += fmt.Sprintf("%s%s%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), string(valueToken), lineBreakAfterKey, childContent)
 			}
 			return result, ref.Len() > 0
 		}

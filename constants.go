@@ -2,9 +2,9 @@ package ntgo
 
 const (
 	DictionaryKeySeparator = ':'
-	ListSymbol             = '-'
-	TextSymbol             = '>'
-	CommentSymbol          = '#'
+	ListToken              = '-'
+	TextToken              = '>'
+	CommentToken           = '#'
 	IndentChar             = ' '
 	Space                  = ' '
 	Tab                    = '\t'

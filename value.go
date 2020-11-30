@@ -220,11 +220,11 @@ func detectValueType(line []byte) (ValueType, int, error) {
 	switch chars[0] {
 	case EmptyChar:
 		index = NotFoundIndex
-	case CommentSymbol:
+	case CommentToken:
 		valueType = ValueTypeComment
 	case Tab:
 		return ValueTypeUnknown, index, TabInIndentationError
-	case TextSymbol:
+	case TextToken:
 		{
 			switch chars[1] {
 			case Space, CR, LF, EmptyChar:
@@ -233,7 +233,7 @@ func detectValueType(line []byte) (ValueType, int, error) {
 				valueType = ValueTypeString
 			}
 		}
-	case ListSymbol:
+	case ListToken:
 		{
 			switch chars[1] {
 			case Space, CR, LF, EmptyChar:
@@ -269,9 +269,9 @@ func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer B
 	for {
 		char, nextIndex := readFirstMeaningfulCharacter(currentLine, false)
 
-		if char != CommentSymbol && char != CR && char != LF && nextIndex != NotFoundIndex {
+		if char != CommentToken && char != CR && char != LF && nextIndex != NotFoundIndex {
 			// validate
-			if char == TextSymbol {
+			if char == TextToken {
 				if nextIndex != baseIndentSpaces {
 					return nil, hasNext, DifferentLevelOnSameChildError
 				}
@@ -290,13 +290,13 @@ func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer B
 
 			// append text
 			if len(currentLine) <= nextIndex+1 {
-				// text ends with symbol
+				// text ends with token
 				v.Text = append(v.Text, "")
 			} else if currentLine[nextIndex+1] == CR || currentLine[nextIndex+1] == LF {
-				// text symbol with no space
+				// text token with no space
 				v.Text = append(v.Text, string(currentLine[nextIndex+1]))
 			} else {
-				// after text symbol(>) and space
+				// after text token(>) and space
 				v.Text = append(v.Text, string(currentLine[nextIndex+2:]))
 			}
 		}
@@ -341,7 +341,7 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 	v.Type = ValueTypeList
 
 	currentLine := initialLine
-	if currentLine[baseIndentSpaces] != ListSymbol {
+	if currentLine[baseIndentSpaces] != ListToken {
 		return nil, hasNext, ExpectedTokenError
 	}
 	elementContent := currentLine[baseIndentSpaces+1:]
@@ -375,7 +375,7 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 			}
 
 			// validate
-			if currentLine[nextIndex] != CommentSymbol {
+			if currentLine[nextIndex] != CommentToken {
 				if nextIndex > baseIndentSpaces {
 					return nil, hasNext, StringHasChildError
 				}
@@ -495,7 +495,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 				return nil, hasNext, TabInIndentationError
 			}
 
-			if nextIndex == NotFoundIndex || char == CommentSymbol {
+			if nextIndex == NotFoundIndex || char == CommentToken {
 				continue
 			}
 
@@ -506,7 +506,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 				break
 			}
 
-			if currentLine[nextIndex] != CommentSymbol {
+			if currentLine[nextIndex] != CommentToken {
 				if nextIndex > baseIndentSpaces {
 					return nil, hasNext, StringHasChildError
 				}
@@ -559,7 +559,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 				continue
 			}
 
-			if char == CommentSymbol {
+			if char == CommentToken {
 				continue
 			}
 
@@ -591,7 +591,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 				}
 			}
 
-			if char != EmptyChar && char != ListSymbol && char != TextSymbol && char != CommentSymbol {
+			if char != EmptyChar && char != ListToken && char != TextToken && char != CommentToken {
 				_, valueIndex := detectKeyBytes(currentLine)
 				if valueIndex == NotFoundIndex {
 					// string has line break
@@ -704,8 +704,8 @@ func readFirstMeaningfulCharacter(line []byte, skipLineBreak bool) (byte, int) {
 /**
  * Specifiaction:
  *   dictionary key is inspected with the following rules;
- *   1. line starts with a symbol of multi line text (>), list (-) and comment (#) with trailing space, are not inspected
- *   2. line with the dictionary key delimiter symbol (':') is subject to search dictionary key
+ *   1. line starts with a token of multi line text (>), list (-) and comment (#) with trailing space, are not inspected
+ *   2. line with the dictionary key delimiter token (':') is subject to search dictionary key
  *   3. treat delimiter inside of quotes as a part of key
  *   4. quotes detection is prior to delimiter detection
  *   5. bytes from first meaningful character to the index before delimiter are considered as key
