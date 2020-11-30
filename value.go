@@ -268,6 +268,9 @@ func (v *Value) readTextValue(baseIndentSpaces int, initialLine []byte, buffer B
 
 	for {
 		char, nextIndex := readFirstMeaningfulCharacter(currentLine, false)
+		if char == Tab {
+			return nil, hasNext, TabInIndentationError
+		}
 
 		if char != CommentToken && char != CR && char != LF && nextIndex != NotFoundIndex {
 			// validate
@@ -465,7 +468,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 	if key == nil && valueIndex == NotFoundIndex {
 		return nil, hasNext, RootStringError
 	}
-	
+
 	sanitizeDictionaryKey(&key)
 
 	if v.Dictionary != nil {
