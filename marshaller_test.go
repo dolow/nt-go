@@ -82,6 +82,7 @@ type SampleDict struct {
 
 type SampleMultilineString struct {
 	Str         string    `nt:"str,multilinestrings"`
+	StrPtr      *string   `nt:"str_ptr,multilinestrings"`
 	StrSlice    []string  `nt:"str_slice,multilinestrings"`
 	StrPtrSlice []*string `nt:"str_ptr_slice,multilinestrings"`
 }
@@ -731,10 +732,12 @@ func TestMarshalSlice(t *testing.T) {
 func TestUnmarshalMultilineStrings(t *testing.T) {
 	t.Run("multiple line", func(t *testing.T) {
 		subject := func() string {
+			ptrStr := "line ptr 1\nline ptr 2"
 			ptrLine1 := "ptr slice line 1"
 			ptrLine2 := "ptr slice line 2"
 			s := SampleMultilineString{
 				Str:         "line 1\nline 2",
+				StrPtr:      &ptrStr,
 				StrSlice:    []string{"slice line 1", "slice line 2"},
 				StrPtrSlice: []*string{&ptrLine1, &ptrLine2},
 			}
@@ -745,6 +748,9 @@ func TestUnmarshalMultilineStrings(t *testing.T) {
 			assert.Equal(t, `str:
   > line 1
   > line 2
+str_ptr:
+  > line ptr 1
+  > line ptr 2
 str_slice:
   > slice line 1
   > slice line 2
@@ -757,9 +763,11 @@ str_ptr_slice:
 
 	t.Run("single line", func(t *testing.T) {
 		subject := func() string {
+			ptrStr := "line ptr"
 			ptrLine := "ptr slice line"
 			s := SampleMultilineString{
 				Str:         "line",
+				StrPtr:      &ptrStr,
 				StrSlice:    []string{"slice line"},
 				StrPtrSlice: []*string{&ptrLine},
 			}
@@ -769,6 +777,8 @@ str_ptr_slice:
 			ret := subject()
 			assert.Equal(t, `str:
   > line
+str_ptr:
+  > line ptr
 str_slice:
   > slice line
 str_ptr_slice:
