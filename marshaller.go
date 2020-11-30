@@ -169,15 +169,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 	case reflect.Float32, reflect.Float64:
 		return fmt.Sprintf("%f%s", ref.Float(), string(LF)), true
 	case reflect.String:
-		var value string
-		if ref.Kind() == reflect.Ptr {
-			if ref.IsNil() {
-				return "", false
-			}
-			value = ref.Elem().String()
-		} else {
-			value = ref.String()
-		}
+		value := ref.String()
 		lines := strings.Split(value, string(LF))
 		if len(lines) == 1 {
 			return fmt.Sprintf("%s%s", value, string(LF)), value != ""
@@ -227,12 +219,6 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 	case reflect.Struct:
 		{
 			substance := *ref
-			if ref.Type().Kind() == reflect.Ptr {
-				if substance.IsNil() {
-					return "", false
-				}
-				substance = ref.Elem()
-			}
 			var result string
 			for i := 0; i < typ.NumField(); i++ {
 				fieldInfo := typ.Field(i)
