@@ -166,6 +166,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 	switch typ.Kind() {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return fmt.Sprintf("%d%s", ref.Int(), string(LF)), true
+	case reflect.Float32, reflect.Float64:
+		return fmt.Sprintf("%f%s", ref.Float(), string(LF)), true
 	case reflect.String:
 		var value string
 		if ref.Kind() == reflect.Ptr {
@@ -249,7 +251,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 				var lineBreakAfterKey string
 
 				switch fieldType.Kind() {
-				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 					lineBreakAfterKey = string(Space)
 				case reflect.String:
 					lineBreakAfterKey = string(Space)
@@ -263,7 +265,8 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 						}
 					}
 				case reflect.Ptr:
-					if fieldRef.Type().Elem().Kind() == reflect.String {
+					switch fieldRef.Type().Elem().Kind() {
+					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 						lineBreakAfterKey = string(Space)
 
 						lines := strings.Split(fieldRef.String(), string(LF))
@@ -274,7 +277,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 								lineBreakAfterKey = string(LF)
 							}
 						}
-					} else {
+					default:
 						lineBreakAfterKey = string(LF)
 					}
 				default:
@@ -283,8 +286,11 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 
 				marshalizedValue, exists := unmarshal(fieldType, &fieldRef, depth+1, childTagFlag)
 
-				if !exists && ((childTagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty) {
-					continue
+				if !exists {
+					if (childTagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty {
+						continue
+					}
+					marshalizedValue = ""
 				}
 				result += fmt.Sprintf("%s%s:%s%s", fmt.Sprintf("%*s", depth*UnmarshalDefaultIndentSize, ""), key, lineBreakAfterKey, marshalizedValue)
 			}
@@ -293,11 +299,11 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 	case reflect.Ptr:
 		{
 			if ref.IsNil() {
-				if (tagFlag & MarshallerTagFlagOmitEmpty) == MarshallerTagFlagOmitEmpty {
-					return "", false
-				}
+				return "", false
 			}
-			return unmarshal(typ.Elem(), ref, depth, 0)
+
+			elem := ref.Elem()
+			return unmarshal(typ.Elem(), &elem, depth, 0)
 		}
 	}
 	return "", false

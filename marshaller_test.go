@@ -2,6 +2,7 @@ package ntgo
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -113,6 +114,13 @@ type StringStruct struct {
 type RefStruct struct {
 	RefString1 *string `nt:"key1"`
 	RefString2 *string `nt:"key2,omitempty"`
+}
+
+type NumberStruct struct {
+	Int        int      `nt:"int"`
+	Float32    float32  `nt:"float"`
+	IntPtr     *int     `nt:"int_ptr"`
+	Float32Ptr *float32 `nt:"float_ptr"`
 }
 
 func TestMarshal(t *testing.T) {
@@ -410,13 +418,28 @@ list_string:
 list_string_pointer:
   - list of str ptr 1
   - list of str ptr 2
-not_omit_string: 
-`
+not_omit_string: `
 
 	t.Run("holistic", func(t *testing.T) {
 		s := subject()
 
 		assert.Equal(t, expect, s)
+	})
+
+	t.Run("struct with number", func(t *testing.T) {
+		var i int = 123456
+		var f float32 = 1.23456
+		s := NumberStruct{-123456, -1.23456, &i, &f}
+		ret := Unmarshal(s)
+
+		t.Run("should unmarshaled to string", func(t *testing.T) {
+			lines := strings.Split(ret, "\n")
+			assert.Equal(t, "int: -123456", lines[0])
+			assert.Equal(t, "float: -1.2345", lines[1][0:14])
+			assert.Equal(t, "int_ptr: 123456", lines[2])
+			assert.Equal(t, "float_ptr: 1.2345", lines[3][0:17])
+			assert.Equal(t, "", lines[4])
+		})
 	})
 
 	t.Run("string contains linebreak", func(t *testing.T) {
