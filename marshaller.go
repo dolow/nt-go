@@ -190,7 +190,6 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 			valueToken := string(ListToken)
 			indentSize := depth * UnmarshalDefaultIndentSize
 			childDepth := depth + 1
-			depthAddition := 1
 
 			sliceElementType := typ.Elem()
 			sliceElementPointingType := sliceElementType
