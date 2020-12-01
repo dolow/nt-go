@@ -1440,6 +1440,57 @@ func TestReadListValue(t *testing.T) {
 		})
 	})
 
+	t.Run("when list has string", func(t *testing.T) {
+		index = 2
+		firstLine = []byte("  - str\n")
+
+		t.Run("when comment token appeard on the same level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("  # comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "  # comment", string(nextLine))
+			})
+		})
+		t.Run("when comment token appeard on deeper level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("    # comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "    # comment", string(nextLine))
+			})
+		})
+		t.Run("when comment token appeard on shallower level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("# comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "# comment", string(nextLine))
+			})
+		})
+	})
+
 	t.Run("irregulars", func(t *testing.T) {
 		t.Run("when indent contains tab character", func(t *testing.T) {
 			t.Run("when it is initial line", func(t *testing.T) {
@@ -1776,6 +1827,57 @@ key2: next dict`)
 			assert.Equal(t, 2, len(value.Dictionary["key1"].Dictionary))
 			assert.Equal(t, "first element", value.Dictionary["key1"].Dictionary["key1_1"].String)
 			assert.Equal(t, "second element", value.Dictionary["key1"].Dictionary["key1_2"].String)
+		})
+	})
+
+	t.Run("when dictionary has string", func(t *testing.T) {
+		index = 2
+		firstLine = []byte("  key: str\n")
+
+		t.Run("when comment token appeard on the same level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("  # comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "  # comment", string(nextLine))
+			})
+		})
+		t.Run("when comment token appeard on deeper level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("    # comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "    # comment", string(nextLine))
+			})
+		})
+		t.Run("when comment token appeard on shallower level", func(t *testing.T) {
+			condition = func() {
+				content = []byte("# comment")
+			}
+			t.Run("should return nil error", func(t *testing.T) {
+				prepare()
+				_, _, err := subject()
+				assert.Nil(t, err)
+			})
+			t.Run("should comment line as next line", func(t *testing.T) {
+				prepare()
+				nextLine, _, _ := subject()
+				assert.Equal(t, "# comment", string(nextLine))
+			})
 		})
 	})
 
