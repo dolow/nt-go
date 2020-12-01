@@ -370,7 +370,7 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 
 			char, nextIndex := readFirstMeaningfulCharacter(currentLine, true)
 			if char == Tab {
-				return currentLine, hasNext, TabInIndentationError
+				return nil, hasNext, TabInIndentationError
 			}
 
 			if nextIndex == NotFoundIndex {
@@ -505,7 +505,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 				return nil, hasNext, TabInIndentationError
 			}
 
-			if nextIndex == NotFoundIndex || char == CommentToken {
+			if nextIndex == NotFoundIndex {
 				continue
 			}
 
