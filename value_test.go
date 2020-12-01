@@ -1456,16 +1456,31 @@ func TestReadListValue(t *testing.T) {
 				})
 			})
 			t.Run("when it is second line", func(t *testing.T) {
-				condition = func() {
-					index = 0
-					firstLine = []byte("-\n")
-					content = []byte(" \t - first element")
-				}
+				t.Run("when first line is string", func(t *testing.T) {
+					condition = func() {
+						index = 0
+						firstLine = []byte("- str\n")
+						content = []byte(" \t - first element")
+					}
 
-				t.Run("should return TabInIndentationError", func(t *testing.T) {
-					prepare()
-					_, _, err := subject()
-					assert.Equal(t, TabInIndentationError, err)
+					t.Run("should return TabInIndentationError", func(t *testing.T) {
+						prepare()
+						_, _, err := subject()
+						assert.Equal(t, TabInIndentationError, err)
+					})
+				})
+				t.Run("when first line is not string", func(t *testing.T) {
+					condition = func() {
+						index = 0
+						firstLine = []byte("-\n")
+						content = []byte(" \t - first element")
+					}
+
+					t.Run("should return TabInIndentationError", func(t *testing.T) {
+						prepare()
+						_, _, err := subject()
+						assert.Equal(t, TabInIndentationError, err)
+					})
 				})
 			})
 		})
@@ -1780,16 +1795,31 @@ key2: next dict`)
 				})
 			})
 			t.Run("when it is second line", func(t *testing.T) {
-				condition = func() {
-					index = 0
-					firstLine = []byte("key1:\n")
-					content = []byte(" \t key1_1: first element")
-				}
+				t.Run("when first line is string", func(t *testing.T) {
+					condition = func() {
+						index = 0
+						firstLine = []byte("key1: str\n")
+						content = []byte(" \t key1_1: first element")
+					}
 
-				t.Run("should return TabInIndentationError", func(t *testing.T) {
-					prepare()
-					_, _, err := subject()
-					assert.Equal(t, TabInIndentationError, err)
+					t.Run("should return TabInIndentationError", func(t *testing.T) {
+						prepare()
+						_, _, err := subject()
+						assert.Equal(t, TabInIndentationError, err)
+					})
+				})
+				t.Run("when first line is not string", func(t *testing.T) {
+					condition = func() {
+						index = 0
+						firstLine = []byte("key1:\n")
+						content = []byte(" \t key1_1: first element")
+					}
+
+					t.Run("should return TabInIndentationError", func(t *testing.T) {
+						prepare()
+						_, _, err := subject()
+						assert.Equal(t, TabInIndentationError, err)
+					})
 				})
 			})
 		})
