@@ -1658,10 +1658,20 @@ func TestReadListValue(t *testing.T) {
 		t.Run("when buffer returns error except io.EOF", func(t *testing.T) {
 			buf := &ErrorBuffer{}
 
-			t.Run("should return error originally from buffer", func(t *testing.T) {
-				prepare()
-				_, _, err := value.readListValue(0, []byte("- element 1"), buf)
-				assert.Equal(t, TestError, err)
+			t.Run("when list conststs of string", func(t *testing.T) {
+				t.Run("should return error originally from buffer", func(t *testing.T) {
+					prepare()
+					_, _, err := value.readListValue(0, []byte("- element 1"), buf)
+					assert.Equal(t, TestError, err)
+				})
+			})
+
+			t.Run("when list conststs of other than string", func(t *testing.T) {
+				t.Run("should return error originally from buffer", func(t *testing.T) {
+					prepare()
+					_, _, err := value.readListValue(0, []byte("-\n"), buf)
+					assert.Equal(t, TestError, err)
+				})
 			})
 		})
 	})
@@ -2048,10 +2058,20 @@ key2: next dict`)
 		t.Run("when buffer returns error except io.EOF", func(t *testing.T) {
 			buf := &ErrorBuffer{}
 
-			t.Run("should return error originally from buffer", func(t *testing.T) {
-				prepare()
-				_, _, err := value.readDictionaryValue(0, []byte("key1: element 1"), buf)
-				assert.Equal(t, TestError, err)
+			t.Run("when list conststs of string", func(t *testing.T) {
+				t.Run("should return error originally from buffer", func(t *testing.T) {
+					prepare()
+					_, _, err := value.readDictionaryValue(0, []byte("key1: element 1"), buf)
+					assert.Equal(t, TestError, err)
+				})
+			})
+
+			t.Run("when list conststs of other than string", func(t *testing.T) {
+				t.Run("should return error originally from buffer", func(t *testing.T) {
+					prepare()
+					_, _, err := value.readDictionaryValue(0, []byte("key1:\n"), buf)
+					assert.Equal(t, TestError, err)
+				})
 			})
 		})
 	})
