@@ -1772,7 +1772,7 @@ key2: next dict`)
 			nextLine, _, _ := subject()
 			assert.Equal(t, []byte("  key1_1:"), nextLine)
 		})
-		t.Run("should add empty string element to List slice", func(t *testing.T) {
+		t.Run("should add empty string element to Dictionary", func(t *testing.T) {
 			prepare()
 			subject()
 			assert.Equal(t, 1, len(value.Dictionary))

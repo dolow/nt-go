@@ -440,9 +440,6 @@ func (v *Value) readListValue(baseIndentSpaces int, initialLine []byte, buffer B
 		// Parse child
 		// TODO: elementContent internally converted to bytes.Buffer, inpsect its performance cost
 		if err := child.Parse(elementContent); err != nil {
-			if err != EmptyDataError {
-				return nil, hasNext, err
-			}
 			// treat empty data as empty string
 			child.Type = ValueTypeString
 			child.String = ""
@@ -626,10 +623,7 @@ func (v *Value) readDictionaryValue(baseIndentSpaces int, initialLine []byte, bu
 		} else {
 			child.IndentSize = v.IndentSize
 
-			if err = child.Parse(elementContent); err == EmptyDataError {
-				child.Type = ValueTypeString
-				child.String = ""
-			} else if err != nil {
+			if err = child.Parse(elementContent); err != nil {
 				return nil, hasNext, err
 			}
 		}
