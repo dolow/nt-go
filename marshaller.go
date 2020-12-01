@@ -260,7 +260,7 @@ func unmarshal(typ reflect.Type, ref *reflect.Value, depth int, tagFlag int) (st
 					case reflect.String, reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Float32, reflect.Float64:
 						lineBreakAfterKey = string(Space)
 
-						lines := strings.Split(fieldRef.String(), string(LF))
+						lines := strings.Split(fieldRef.Elem().String(), string(LF))
 						if len(lines) > 1 {
 							lineBreakAfterKey = string(LF)
 						} else {
